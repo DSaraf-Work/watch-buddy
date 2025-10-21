@@ -93,12 +93,12 @@ export function DashboardContent({ user, profile }: DashboardContentProps) {
               Quick Actions
             </h2>
             <div className="grid gap-4 md:grid-cols-2">
-              <button className="rounded-lg border-2 border-primary-200 p-6 text-left transition hover:border-primary-400 hover:bg-primary-50">
+              <Link href="/search" className="rounded-lg border-2 border-primary-200 p-6 text-left transition hover:border-primary-400 hover:bg-primary-50 block">
                 <h3 className="font-semibold text-gray-900">Search Content</h3>
                 <p className="mt-1 text-sm text-gray-600">
                   Find movies and series to add to your watchlist
                 </p>
-              </button>
+              </Link>
               <button className="rounded-lg border-2 border-primary-200 p-6 text-left transition hover:border-primary-400 hover:bg-primary-50">
                 <h3 className="font-semibold text-gray-900">View Watchlist</h3>
                 <p className="mt-1 text-sm text-gray-600">
