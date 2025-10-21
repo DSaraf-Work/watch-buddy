@@ -9,6 +9,7 @@ import { PlatformBadges } from './PlatformBadges'
 import { TrailerEmbed } from './TrailerEmbed'
 import { ContentStatusButtons } from './ContentStatusButtons'
 import { IndiaWatchProviders } from './IndiaWatchProviders'
+import Link from 'next/link'
 
 interface ContentData {
   id: string
@@ -213,10 +214,16 @@ export function ContentDetail({ contentId }: ContentDetailProps) {
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">Crew</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {content.crew_data.slice(0, 6).map((crew) => (
-                    <div key={crew.id} className="text-sm">
-                      <p className="font-semibold text-gray-900">{crew.name}</p>
+                    <Link
+                      key={crew.id}
+                      href={`/person/${crew.id}`}
+                      className="text-sm group cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors"
+                    >
+                      <p className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                        {crew.name}
+                      </p>
                       <p className="text-gray-600">{crew.job}</p>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </div>

@@ -49,8 +49,11 @@ export async function getContentById(
       contentData = transformTVShowData(tvShow, credits, videos.results)
     }
 
-    // Cache the data
-    await cacheContent(contentData)
+    // Cache the data and get the ID
+    const cachedId = await cacheContent(contentData)
+    if (cachedId) {
+      contentData.id = cachedId
+    }
 
     return contentData
   } catch (error) {
@@ -62,10 +65,10 @@ export async function getContentById(
 /**
  * Cache content data in Supabase
  */
-async function cacheContent(content: ContentData): Promise<void> {
+async function cacheContent(content: ContentData): Promise<string | null> {
   const supabase = await createClient()
 
-  const { error } = await supabase.from('content').upsert(
+  const { data, error } = await supabase.from('content').upsert(
     {
       tmdb_id: content.tmdb_id,
       imdb_id: content.imdb_id,
@@ -88,10 +91,15 @@ async function cacheContent(content: ContentData): Promise<void> {
       onConflict: 'tmdb_id',
     }
   )
+  .select('id')
+  .single()
 
   if (error) {
     console.error('Error caching content:', error)
+    return null
   }
+
+  return data?.id || null
 }
 
 /**

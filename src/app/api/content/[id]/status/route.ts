@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { getContentById } from '@/lib/tmdb/cache'
 
 export async function GET(
   request: NextRequest,
@@ -68,19 +69,24 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
     }
 
-    // Get content ID from database
+    // Get content ID from database, or cache it if not exists
     const [tmdbIdStr, contentType] = params.id.split('-')
     const tmdbId = parseInt(tmdbIdStr)
 
-    const { data: content } = await supabase
+    let { data: content } = await supabase
       .from('content')
       .select('id')
       .eq('tmdb_id', tmdbId)
       .eq('content_type', contentType)
       .single()
 
+    // If content not cached, fetch and cache it
     if (!content) {
-      return NextResponse.json({ error: 'Content not found' }, { status: 404 })
+      const contentData = await getContentById(tmdbId, contentType as 'movie' | 'series')
+      if (!contentData || !contentData.id) {
+        return NextResponse.json({ error: 'Content not found' }, { status: 404 })
+      }
+      content = { id: contentData.id }
     }
 
     // Upsert status

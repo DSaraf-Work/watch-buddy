@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import Link from 'next/link'
 
 interface CastMember {
   id: number
@@ -23,8 +24,12 @@ export function CastSection({ cast }: CastSectionProps) {
           : '/placeholder-avatar.png'
 
         return (
-          <div key={member.id} className="text-center">
-            <div className="relative aspect-square overflow-hidden rounded-lg bg-gray-200 mb-2">
+          <Link
+            key={member.id}
+            href={`/person/${member.id}`}
+            className="text-center group cursor-pointer"
+          >
+            <div className="relative aspect-square overflow-hidden rounded-lg bg-gray-200 mb-2 group-hover:ring-2 group-hover:ring-blue-500 transition-all">
               <Image
                 src={profileUrl}
                 alt={member.name}
@@ -33,11 +38,11 @@ export function CastSection({ cast }: CastSectionProps) {
                 sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
               />
             </div>
-            <p className="font-semibold text-sm text-gray-900 line-clamp-1">
+            <p className="font-semibold text-sm text-gray-900 line-clamp-1 group-hover:text-blue-600 transition-colors">
               {member.name}
             </p>
             <p className="text-xs text-gray-600 line-clamp-1">{member.character}</p>
-          </div>
+          </Link>
         )
       })}
     </div>

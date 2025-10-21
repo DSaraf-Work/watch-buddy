@@ -54,6 +54,33 @@ export function IndiaWatchProviders({ providers }: IndiaWatchProvidersProps) {
     return `https://image.tmdb.org/t/p/original${logoPath}`
   }
 
+  const getProviderWebsiteUrl = (providerName: string): string | null => {
+    const urls: Record<string, string> = {
+      'Netflix': 'https://www.netflix.com/in/',
+      'Amazon Prime Video': 'https://www.primevideo.com/',
+      'Amazon Prime Video with Ads': 'https://www.primevideo.com/',
+      'Amazon Video': 'https://www.primevideo.com/',
+      'Disney Plus': 'https://www.hotstar.com/',
+      'Disney+ Hotstar': 'https://www.hotstar.com/',
+      'JioHotstar': 'https://www.hotstar.com/',
+      'Hotstar': 'https://www.hotstar.com/',
+      'Apple TV': 'https://tv.apple.com/in',
+      'Apple TV Plus': 'https://tv.apple.com/in',
+      'Google Play Movies': 'https://play.google.com/store/movies',
+      'YouTube': 'https://www.youtube.com/',
+      'Sony Liv': 'https://www.sonyliv.com/',
+      'SonyLIV': 'https://www.sonyliv.com/',
+      'Zee5': 'https://www.zee5.com/',
+      'ZEE5': 'https://www.zee5.com/',
+      'Voot': 'https://www.voot.com/',
+      'HBO Max': 'https://www.hbomax.com/',
+      'Hulu': 'https://www.hulu.com/',
+      'Paramount Plus': 'https://www.paramountplus.com/',
+      'Paramount+': 'https://www.paramountplus.com/',
+    }
+    return urls[providerName] || null
+  }
+
   return (
     <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
       <div className="flex items-center gap-2 mb-4">
@@ -78,13 +105,10 @@ export function IndiaWatchProviders({ providers }: IndiaWatchProvidersProps) {
           <div>
             <p className="text-sm font-medium text-gray-700 mb-2">Stream</p>
             <div className="flex flex-wrap gap-3">
-              {providers.streamingPlatforms.map((provider) => (
-                <div
-                  key={provider.provider_id}
-                  className="group relative"
-                  title={provider.provider_name}
-                >
-                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-white shadow-md hover:shadow-lg transition-shadow">
+              {providers.streamingPlatforms.map((provider) => {
+                const providerUrl = getProviderWebsiteUrl(provider.provider_name)
+                const content = (
+                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-white shadow-md hover:shadow-lg transition-shadow cursor-pointer">
                     <Image
                       src={getProviderLogoUrl(provider.logo_path)}
                       alt={provider.provider_name}
@@ -93,11 +117,31 @@ export function IndiaWatchProviders({ providers }: IndiaWatchProvidersProps) {
                       className="object-cover"
                     />
                   </div>
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                    {provider.provider_name}
+                )
+
+                return (
+                  <div
+                    key={provider.provider_id}
+                    className="group relative"
+                    title={provider.provider_name}
+                  >
+                    {providerUrl ? (
+                      <a
+                        href={providerUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {content}
+                      </a>
+                    ) : (
+                      content
+                    )}
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                      {provider.provider_name}
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         )}
@@ -107,13 +151,10 @@ export function IndiaWatchProviders({ providers }: IndiaWatchProvidersProps) {
           <div>
             <p className="text-sm font-medium text-gray-700 mb-2">Rent</p>
             <div className="flex flex-wrap gap-3">
-              {providers.rentPlatforms.map((provider) => (
-                <div
-                  key={provider.provider_id}
-                  className="group relative"
-                  title={provider.provider_name}
-                >
-                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-white shadow-md hover:shadow-lg transition-shadow">
+              {providers.rentPlatforms.map((provider) => {
+                const providerUrl = getProviderWebsiteUrl(provider.provider_name)
+                const content = (
+                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-white shadow-md hover:shadow-lg transition-shadow cursor-pointer">
                     <Image
                       src={getProviderLogoUrl(provider.logo_path)}
                       alt={provider.provider_name}
@@ -122,11 +163,31 @@ export function IndiaWatchProviders({ providers }: IndiaWatchProvidersProps) {
                       className="object-cover"
                     />
                   </div>
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                    {provider.provider_name}
+                )
+
+                return (
+                  <div
+                    key={provider.provider_id}
+                    className="group relative"
+                    title={provider.provider_name}
+                  >
+                    {providerUrl ? (
+                      <a
+                        href={providerUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {content}
+                      </a>
+                    ) : (
+                      content
+                    )}
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                      {provider.provider_name}
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         )}
@@ -136,13 +197,10 @@ export function IndiaWatchProviders({ providers }: IndiaWatchProvidersProps) {
           <div>
             <p className="text-sm font-medium text-gray-700 mb-2">Buy</p>
             <div className="flex flex-wrap gap-3">
-              {providers.buyPlatforms.map((provider) => (
-                <div
-                  key={provider.provider_id}
-                  className="group relative"
-                  title={provider.provider_name}
-                >
-                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-white shadow-md hover:shadow-lg transition-shadow">
+              {providers.buyPlatforms.map((provider) => {
+                const providerUrl = getProviderWebsiteUrl(provider.provider_name)
+                const content = (
+                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-white shadow-md hover:shadow-lg transition-shadow cursor-pointer">
                     <Image
                       src={getProviderLogoUrl(provider.logo_path)}
                       alt={provider.provider_name}
@@ -151,11 +209,31 @@ export function IndiaWatchProviders({ providers }: IndiaWatchProvidersProps) {
                       className="object-cover"
                     />
                   </div>
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                    {provider.provider_name}
+                )
+
+                return (
+                  <div
+                    key={provider.provider_id}
+                    className="group relative"
+                    title={provider.provider_name}
+                  >
+                    {providerUrl ? (
+                      <a
+                        href={providerUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {content}
+                      </a>
+                    ) : (
+                      content
+                    )}
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                      {provider.provider_name}
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         )}
