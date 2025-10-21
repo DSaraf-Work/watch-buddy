@@ -173,7 +173,10 @@ export function ContentDetail({ contentId }: ContentDetailProps) {
 
               {/* India Watch Providers */}
               <div className="mt-6">
-                <IndiaWatchProviders providers={content.indiaWatchProviders || null} />
+                <IndiaWatchProviders
+                  providers={content.indiaWatchProviders || null}
+                  contentTitle={content.title}
+                />
               </div>
 
               {/* OTT Availability */}

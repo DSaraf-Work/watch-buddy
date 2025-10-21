@@ -16,9 +16,10 @@ interface IndiaWatchProvidersProps {
     buyPlatforms: WatchProvider[]
     link?: string
   } | null
+  contentTitle?: string
 }
 
-export function IndiaWatchProviders({ providers }: IndiaWatchProvidersProps) {
+export function IndiaWatchProviders({ providers, contentTitle }: IndiaWatchProvidersProps) {
   if (!providers) {
     return (
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
@@ -54,7 +55,13 @@ export function IndiaWatchProviders({ providers }: IndiaWatchProvidersProps) {
     return `https://image.tmdb.org/t/p/original${logoPath}`
   }
 
-  const getProviderWebsiteUrl = (providerName: string): string | null => {
+  const getProviderWebsiteUrl = (providerName: string, justWatchLink?: string): string | null => {
+    // If we have a JustWatch link, use it as it's the direct link to the content
+    if (justWatchLink) {
+      return justWatchLink
+    }
+
+    // Fallback to platform homepage if no direct link available
     const urls: Record<string, string> = {
       'Netflix': 'https://www.netflix.com/in/',
       'Amazon Prime Video': 'https://www.primevideo.com/',
@@ -106,7 +113,7 @@ export function IndiaWatchProviders({ providers }: IndiaWatchProvidersProps) {
             <p className="text-sm font-medium text-gray-700 mb-2">Stream</p>
             <div className="flex flex-wrap gap-3">
               {providers.streamingPlatforms.map((provider) => {
-                const providerUrl = getProviderWebsiteUrl(provider.provider_name)
+                const providerUrl = getProviderWebsiteUrl(provider.provider_name, providers.link)
                 const content = (
                   <div className="w-12 h-12 rounded-lg overflow-hidden bg-white shadow-md hover:shadow-lg transition-shadow cursor-pointer">
                     <Image
@@ -137,7 +144,7 @@ export function IndiaWatchProviders({ providers }: IndiaWatchProvidersProps) {
                       content
                     )}
                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                      {provider.provider_name}
+                      {providerUrl && providers.link ? `Watch on ${provider.provider_name}` : provider.provider_name}
                     </div>
                   </div>
                 )
@@ -152,7 +159,7 @@ export function IndiaWatchProviders({ providers }: IndiaWatchProvidersProps) {
             <p className="text-sm font-medium text-gray-700 mb-2">Rent</p>
             <div className="flex flex-wrap gap-3">
               {providers.rentPlatforms.map((provider) => {
-                const providerUrl = getProviderWebsiteUrl(provider.provider_name)
+                const providerUrl = getProviderWebsiteUrl(provider.provider_name, providers.link)
                 const content = (
                   <div className="w-12 h-12 rounded-lg overflow-hidden bg-white shadow-md hover:shadow-lg transition-shadow cursor-pointer">
                     <Image
@@ -183,7 +190,7 @@ export function IndiaWatchProviders({ providers }: IndiaWatchProvidersProps) {
                       content
                     )}
                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                      {provider.provider_name}
+                      {providerUrl && providers.link ? `Rent on ${provider.provider_name}` : provider.provider_name}
                     </div>
                   </div>
                 )
@@ -198,7 +205,7 @@ export function IndiaWatchProviders({ providers }: IndiaWatchProvidersProps) {
             <p className="text-sm font-medium text-gray-700 mb-2">Buy</p>
             <div className="flex flex-wrap gap-3">
               {providers.buyPlatforms.map((provider) => {
-                const providerUrl = getProviderWebsiteUrl(provider.provider_name)
+                const providerUrl = getProviderWebsiteUrl(provider.provider_name, providers.link)
                 const content = (
                   <div className="w-12 h-12 rounded-lg overflow-hidden bg-white shadow-md hover:shadow-lg transition-shadow cursor-pointer">
                     <Image
@@ -229,7 +236,7 @@ export function IndiaWatchProviders({ providers }: IndiaWatchProvidersProps) {
                       content
                     )}
                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                      {provider.provider_name}
+                      {providerUrl && providers.link ? `Buy on ${provider.provider_name}` : provider.provider_name}
                     </div>
                   </div>
                 )
@@ -239,9 +246,14 @@ export function IndiaWatchProviders({ providers }: IndiaWatchProvidersProps) {
         )}
       </div>
 
-      <p className="text-xs text-gray-500 mt-4">
-        Powered by JustWatch • Data may vary by region
-      </p>
+      <div className="mt-4 space-y-1">
+        <p className="text-xs text-gray-500">
+          💡 Click any platform logo to watch directly on that service
+        </p>
+        <p className="text-xs text-gray-500">
+          Powered by JustWatch • Data may vary by region
+        </p>
+      </div>
     </div>
   )
 }
