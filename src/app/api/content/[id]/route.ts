@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getContentById } from '@/lib/tmdb/cache'
+import { getIndiaWatchProviders } from '@/lib/tmdb/watchProviders'
 
 export async function GET(
   request: NextRequest,
@@ -37,7 +38,7 @@ export async function GET(
       return NextResponse.json({ error: 'Content not found' }, { status: 404 })
     }
 
-    // Get OTT availability
+    // Get OTT availability from database
     const { data: availability } = await supabase
       .from('content_availability')
       .select(`
@@ -46,9 +47,13 @@ export async function GET(
       `)
       .eq('content_id', content.id)
 
+    // Get India watch providers from TMDB
+    const indiaProviders = await getIndiaWatchProviders(tmdbId, contentType as 'movie' | 'series')
+
     return NextResponse.json({
       ...content,
       availability: availability || [],
+      indiaWatchProviders: indiaProviders,
     })
   } catch (error) {
     console.error('Content API error:', error)

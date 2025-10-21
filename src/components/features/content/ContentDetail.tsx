@@ -7,6 +7,8 @@ import { ContentInfo } from './ContentInfo'
 import { CastSection } from './CastSection'
 import { PlatformBadges } from './PlatformBadges'
 import { TrailerEmbed } from './TrailerEmbed'
+import { ContentStatusButtons } from './ContentStatusButtons'
+import { IndiaWatchProviders } from './IndiaWatchProviders'
 
 interface ContentData {
   id: string
@@ -50,6 +52,27 @@ interface ContentData {
     }
     content_url: string | null
   }>
+  indiaWatchProviders?: {
+    streamingPlatforms: Array<{
+      logo_path: string
+      provider_id: number
+      provider_name: string
+      display_priority: number
+    }>
+    rentPlatforms: Array<{
+      logo_path: string
+      provider_id: number
+      provider_name: string
+      display_priority: number
+    }>
+    buyPlatforms: Array<{
+      logo_path: string
+      provider_id: number
+      provider_name: string
+      display_priority: number
+    }>
+    link?: string
+  } | null
 }
 
 interface ContentDetailProps {
@@ -140,6 +163,16 @@ export function ContentDetail({ contentId }: ContentDetailProps) {
                   className="object-cover"
                   priority
                 />
+              </div>
+
+              {/* Status Buttons */}
+              <div className="mt-6">
+                <ContentStatusButtons contentId={contentId} />
+              </div>
+
+              {/* India Watch Providers */}
+              <div className="mt-6">
+                <IndiaWatchProviders providers={content.indiaWatchProviders || null} />
               </div>
 
               {/* OTT Availability */}
