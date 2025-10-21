@@ -8,6 +8,7 @@ interface WatchProvider {
   provider_id: number
   provider_name: string
   display_priority: number
+  provider_url?: string // Direct URL to content on this provider
 }
 
 interface WatchProvidersResponse {
