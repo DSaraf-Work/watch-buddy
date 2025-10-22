@@ -1,7 +1,8 @@
-import { tmdbClient } from './client'
-
 const TMDB_API_BASE_URL = 'https://api.themoviedb.org/3'
-const TMDB_API_KEY = process.env.TMDB_API_KEY
+
+function getApiKey(): string | undefined {
+  return process.env.TMDB_API_KEY
+}
 
 interface WatchProvider {
   logo_path: string
@@ -35,14 +36,15 @@ export async function getIndiaWatchProviders(
   buyPlatforms: WatchProvider[]
   link?: string
 } | null> {
-  if (!TMDB_API_KEY) {
+  const apiKey = getApiKey()
+  if (!apiKey) {
     console.warn('TMDB_API_KEY not set')
     return null
   }
 
   try {
     const endpoint = contentType === 'movie' ? 'movie' : 'tv'
-    const url = `${TMDB_API_BASE_URL}/${endpoint}/${tmdbId}/watch/providers?api_key=${TMDB_API_KEY}`
+    const url = `${TMDB_API_BASE_URL}/${endpoint}/${tmdbId}/watch/providers?api_key=${apiKey}`
 
     const response = await fetch(url, {
       next: { revalidate: 86400 }, // Cache for 24 hours

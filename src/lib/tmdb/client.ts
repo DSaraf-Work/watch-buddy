@@ -7,11 +7,10 @@ import type {
 } from './types'
 
 const TMDB_API_BASE_URL = 'https://api.themoviedb.org/3'
-const TMDB_API_KEY = process.env.TMDB_API_KEY
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p'
 
-if (!TMDB_API_KEY) {
-  console.warn('TMDB_API_KEY is not set. Movie search will not work.')
+function getApiKey(): string | undefined {
+  return process.env.TMDB_API_KEY
 }
 
 class TMDBClient {
@@ -115,8 +114,18 @@ class TMDBClient {
   }
 }
 
-// Export singleton instance
-export const tmdbClient = TMDB_API_KEY ? new TMDBClient(TMDB_API_KEY) : null
+// Export function to get TMDB client instance
+export function getTMDBClient(): TMDBClient | null {
+  const apiKey = getApiKey()
+  if (!apiKey) {
+    console.warn('TMDB_API_KEY is not set. Movie search will not work.')
+    return null
+  }
+  return new TMDBClient(apiKey)
+}
+
+// Export singleton instance (deprecated - use getTMDBClient() instead)
+export const tmdbClient = getTMDBClient()
 
 // Export helper functions
 export function getTMDBImageUrl(path: string | null, size: 'w200' | 'w500' | 'original' = 'w500'): string | null {

@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import type { ContentData, TMDBMovie, TMDBTVShow, TMDBCredits, TMDBVideo } from './types'
-import { tmdbClient, getYouTubeTrailerUrl } from './client'
+import { getTMDBClient, getYouTubeTrailerUrl } from './client'
 
 /**
  * Get content from cache or fetch from TMDB
@@ -31,6 +31,7 @@ export async function getContentById(
   }
 
   // Fetch from TMDB
+  const tmdbClient = getTMDBClient()
   if (!tmdbClient) {
     throw new Error('TMDB client not initialized. Please set TMDB_API_KEY.')
   }

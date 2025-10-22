@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { tmdbClient } from '@/lib/tmdb/client'
+import { getTMDBClient } from '@/lib/tmdb/client'
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,7 +25,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Query parameter is required' }, { status: 400 })
     }
 
-    // Check if TMDB client is available
+    // Get TMDB client instance
+    const tmdbClient = getTMDBClient()
     if (!tmdbClient) {
       return NextResponse.json(
         { error: 'TMDB API is not configured. Please set TMDB_API_KEY.' },
