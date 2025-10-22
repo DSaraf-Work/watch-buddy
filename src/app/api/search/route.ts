@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
     // Get TMDB client instance
     const tmdbClient = getTMDBClient()
     if (!tmdbClient) {
+      console.error('TMDB client is null. TMDB_API_KEY:', process.env.TMDB_API_KEY ? 'SET' : 'NOT SET')
       return NextResponse.json(
         { error: 'TMDB API is not configured. Please set TMDB_API_KEY.' },
         { status: 500 }
@@ -35,7 +36,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Search TMDB
+    console.log('Searching TMDB for:', query)
     const results = await tmdbClient.searchMulti(query, page)
+    console.log('TMDB search results:', results.results?.length || 0, 'items')
 
     // Filter by type if specified
     let filteredResults = results.results
@@ -70,8 +73,9 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Search API error:', error)
+    console.error('Error details:', error instanceof Error ? error.message : String(error))
     return NextResponse.json(
-      { error: 'Failed to search content' },
+      { error: 'Failed to search content', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     )
   }
