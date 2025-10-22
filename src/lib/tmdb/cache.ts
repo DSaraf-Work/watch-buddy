@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import type { ContentData, TMDBMovie, TMDBTVShow, TMDBCredits, TMDBVideo } from './types'
 import { tmdbClient, getYouTubeTrailerUrl } from './client'
 
@@ -64,9 +65,10 @@ export async function getContentById(
 
 /**
  * Cache content data in Supabase
+ * Uses service role client to bypass RLS for caching operations
  */
 async function cacheContent(content: ContentData): Promise<string | null> {
-  const supabase = await createClient()
+  const supabase = createServiceClient()
 
   const { data, error } = await supabase.from('content').upsert(
     {
