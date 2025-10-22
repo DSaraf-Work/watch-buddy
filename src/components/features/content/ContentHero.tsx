@@ -1,14 +1,17 @@
 'use client'
 
+import { ContentStatusDropdown } from './ContentStatusDropdown'
+
 interface ContentHeroProps {
   title: string
   backdropUrl: string | null
   rating: number
   year: number | null
   contentType: 'movie' | 'series'
+  contentId: string
 }
 
-export function ContentHero({ title, backdropUrl, rating, year, contentType }: ContentHeroProps) {
+export function ContentHero({ title, backdropUrl, rating, year, contentType, contentId }: ContentHeroProps) {
   return (
     <div className="relative h-96 overflow-hidden">
       {/* Backdrop Image */}
@@ -25,7 +28,7 @@ export function ContentHero({ title, backdropUrl, rating, year, contentType }: C
 
       {/* Content */}
       <div className="relative h-full container mx-auto px-4 flex items-end pb-8">
-        <div className="text-white">
+        <div className="text-white w-full">
           <div className="flex items-center gap-3 mb-2">
             <span className="px-3 py-1 bg-blue-600 rounded text-sm font-semibold uppercase">
               {contentType === 'movie' ? 'Movie' : 'TV Series'}
@@ -42,7 +45,14 @@ export function ContentHero({ title, backdropUrl, rating, year, contentType }: C
               </span>
             )}
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold">{title}</h1>
+
+          {/* Title and Status Dropdown */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <h1 className="text-4xl md:text-5xl font-bold">{title}</h1>
+            <div className="flex-shrink-0">
+              <ContentStatusDropdown contentId={contentId} />
+            </div>
+          </div>
         </div>
       </div>
     </div>

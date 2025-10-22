@@ -90,6 +90,12 @@ export function ProfileContent({ user, profile }: ProfileContentProps) {
             >
               Dashboard
             </Link>
+            <Link
+              href="/admin"
+              className="text-sm text-gray-600 hover:text-primary-700 transition"
+            >
+              Settings
+            </Link>
             <Button variant="outline" size="sm" onClick={handleLogout}>
               Log Out
             </Button>

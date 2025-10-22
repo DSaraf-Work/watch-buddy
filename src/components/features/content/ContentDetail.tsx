@@ -7,7 +7,6 @@ import { ContentInfo } from './ContentInfo'
 import { CastSection } from './CastSection'
 import { PlatformBadges } from './PlatformBadges'
 import { TrailerEmbed } from './TrailerEmbed'
-import { ContentStatusButtons } from './ContentStatusButtons'
 import { IndiaWatchProviders } from './IndiaWatchProviders'
 import Link from 'next/link'
 
@@ -148,6 +147,7 @@ export function ContentDetail({ contentId }: ContentDetailProps) {
         rating={content.ratings.tmdb}
         year={content.release_date ? new Date(content.release_date).getFullYear() : null}
         contentType={content.content_type}
+        contentId={contentId}
       />
 
       {/* Main Content */}
@@ -164,11 +164,6 @@ export function ContentDetail({ contentId }: ContentDetailProps) {
                   className="object-cover"
                   priority
                 />
-              </div>
-
-              {/* Status Buttons */}
-              <div className="mt-6">
-                <ContentStatusButtons contentId={contentId} />
               </div>
 
               {/* India Watch Providers */}
