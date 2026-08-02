@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server'
 import { desc, eq } from 'drizzle-orm'
 import { getDb } from '@/lib/db'
-import { watchHistory } from '@/lib/db/schema/app'
+import { content, watchHistory } from '@/lib/db/schema/app'
 import { requireUser, unauthorizedResponse } from '@/lib/auth/server'
 
-function serializeHistory(row: typeof watchHistory.$inferSelect) {
+function serializeHistory(
+  row: typeof watchHistory.$inferSelect,
+  contentRow: typeof content.$inferSelect | null
+) {
   return {
     id: row.id,
     user_id: row.userId,
@@ -16,6 +19,16 @@ function serializeHistory(row: typeof watchHistory.$inferSelect) {
     is_rewatch: row.isRewatch,
     created_at: new Date(row.createdAt).toISOString(),
     updated_at: new Date(row.updatedAt).toISOString(),
+    content: contentRow
+      ? {
+          id: contentRow.id,
+          tmdb_id: contentRow.tmdbId,
+          title: contentRow.title,
+          content_type: contentRow.contentType,
+          poster_path: contentRow.posterPath,
+          runtime: contentRow.runtime,
+        }
+      : null,
   }
 }
 
@@ -24,13 +37,16 @@ export async function GET() {
   if (!user) return unauthorizedResponse()
 
   const db = await getDb()
-  const history = await db
-    .select()
+  const rows = await db
+    .select({ history: watchHistory, contentRow: content })
     .from(watchHistory)
+    .leftJoin(content, eq(watchHistory.contentId, content.id))
     .where(eq(watchHistory.userId, user.id))
     .orderBy(desc(watchHistory.watchedAt))
 
-  return NextResponse.json({ history: history.map(serializeHistory) })
+  return NextResponse.json({
+    history: rows.map((row) => serializeHistory(row.history, row.contentRow)),
+  })
 }
 
 export async function POST(request: Request) {
@@ -67,10 +83,17 @@ export async function POST(request: Request) {
     updatedAt: now,
   })
 
-  const [created] = await db.select().from(watchHistory).where(eq(watchHistory.id, id)).limit(1)
+  const [created] = await db
+    .select({ history: watchHistory, contentRow: content })
+    .from(watchHistory)
+    .leftJoin(content, eq(watchHistory.contentId, content.id))
+    .where(eq(watchHistory.id, id))
+    .limit(1)
 
   return NextResponse.json(
-    { history: created ? serializeHistory(created) : null },
+    {
+      history: created ? serializeHistory(created.history, created.contentRow) : null,
+    },
     { status: 201 }
   )
 }

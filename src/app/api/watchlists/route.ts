@@ -77,5 +77,20 @@ export async function POST(request: Request) {
     .where(eq(watchlists.id, watchlistId))
     .limit(1)
 
-  return NextResponse.json({ watchlist: created }, { status: 201 })
+  return NextResponse.json(
+    {
+      watchlist: created
+        ? {
+            id: created.id,
+            name: created.name,
+            description: created.description,
+            owner_id: created.ownerId,
+            is_shared: created.isShared,
+            created_at: new Date(created.createdAt).toISOString(),
+            updated_at: new Date(created.updatedAt).toISOString(),
+          }
+        : null,
+    },
+    { status: 201 }
+  )
 }

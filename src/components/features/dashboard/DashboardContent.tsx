@@ -95,24 +95,24 @@ export function DashboardContent({ user, profile }: DashboardContentProps) {
                   Find movies and series to add to your watchlist
                 </p>
               </Link>
-              <button className="rounded-lg border-2 border-primary-200 p-6 text-left transition hover:border-primary-400 hover:bg-primary-50">
+              <Link href={ROUTES.WATCHLIST.INDEX} className="rounded-lg border-2 border-primary-200 p-6 text-left transition hover:border-primary-400 hover:bg-primary-50 block">
                 <h3 className="font-semibold text-gray-900">View Watchlist</h3>
                 <p className="mt-1 text-sm text-gray-600">
                   See what you&apos;ve planned to watch
                 </p>
-              </button>
-              <button className="rounded-lg border-2 border-primary-200 p-6 text-left transition hover:border-primary-400 hover:bg-primary-50">
+              </Link>
+              <Link href={ROUTES.HISTORY.INDEX} className="rounded-lg border-2 border-primary-200 p-6 text-left transition hover:border-primary-400 hover:bg-primary-50 block">
                 <h3 className="font-semibold text-gray-900">Watch History</h3>
                 <p className="mt-1 text-sm text-gray-600">
                   Track what you&apos;ve already watched
                 </p>
-              </button>
-              <button className="rounded-lg border-2 border-primary-200 p-6 text-left transition hover:border-primary-400 hover:bg-primary-50">
+              </Link>
+              <Link href={ROUTES.INSIGHTS} className="rounded-lg border-2 border-primary-200 p-6 text-left transition hover:border-primary-400 hover:bg-primary-50 block">
                 <h3 className="font-semibold text-gray-900">Get Insights</h3>
                 <p className="mt-1 text-sm text-gray-600">
                   Analyze your viewing habits
                 </p>
-              </button>
+              </Link>
             </div>
           </div>
 
