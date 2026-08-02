@@ -3,7 +3,7 @@ import Link from 'next/link'
 
 export const metadata: Metadata = {
   title: 'Authentication - Watch-Buddy',
-  description: 'Sign in or create an account to start tracking your watch history',
+  description: 'Sign in to Watch-Buddy with your Google account',
 }
 
 export default function AuthLayout({

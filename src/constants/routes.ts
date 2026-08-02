@@ -1,13 +1,9 @@
 export const ROUTES = {
   HOME: '/',
   
-  // Auth routes
+  // Auth
   AUTH: {
     LOGIN: '/auth/login',
-    SIGNUP: '/auth/signup',
-    FORGOT_PASSWORD: '/auth/forgot-password',
-    RESET_PASSWORD: '/auth/reset-password',
-    CALLBACK: '/auth/callback',
   },
 
   // Protected routes

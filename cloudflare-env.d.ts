@@ -8,6 +8,8 @@ interface CloudflareEnv {
   BETTER_AUTH_URL: string
   BETTER_AUTH_SECRET: string
   BETTER_AUTH_TRUSTED_ORIGINS?: string
+  NEXT_PUBLIC_APP_URL?: string
+  GOOGLE_CLIENT_ID: string
+  GOOGLE_CLIENT_SECRET: string
   TMDB_API_KEY?: string
-  RESEND_API_KEY?: string
 }

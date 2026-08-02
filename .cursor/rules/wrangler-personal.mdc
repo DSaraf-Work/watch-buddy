@@ -1,0 +1,39 @@
+---
+description: Use wrangler_personal (personal Cloudflare account) for all Wrangler CLI in this repo
+alwaysApply: true
+---
+
+# Wrangler — personal account
+
+On this machine, all Cloudflare Wrangler commands for **watch-buddy** must target the **personal** account via the zsh alias `wrangler_personal` (defined in `~/.zshrc`).
+
+## How to run Wrangler
+
+| Context | Command |
+|---------|---------|
+| Shell / agent | `scripts/wrangler-personal.sh <wrangler-args>` |
+| Interactive zsh | `wrangler_personal <wrangler-args>` |
+| npm scripts | Use `npm run deploy`, `npm run db:migrate:local`, etc. (scripts call the wrapper) |
+
+Examples:
+
+```bash
+scripts/wrangler-personal.sh whoami
+scripts/wrangler-personal.sh d1 migrations apply DATABASE --local
+npm run deploy
+zsh -ic 'wrangler_personal tail watch-buddy'
+```
+
+## Credentials
+
+- `CLOUDFLARE_API_TOKEN` lives in the `wrangler_personal` zsh alias (`~/.zshrc`), not in this repo.
+- `scripts/wrangler-personal.sh` delegates to that alias for npm scripts and agents.
+
+## Do not
+
+- Use bare `wrangler` or `npx wrangler` for this repo (wrong account / missing credentials).
+- Commit `CLOUDFLARE_API_TOKEN` or other Cloudflare secrets to the repo.
+
+## CI exception
+
+GitHub Actions (`.github/workflows/deploy-to-cloudflare.yml`) uses workflow secrets and `npx wrangler` — do not change CI to the personal alias.

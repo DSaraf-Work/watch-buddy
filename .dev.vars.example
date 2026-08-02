@@ -1,6 +1,16 @@
-NEXTJS_ENV=development
+# Cloudflare (drizzle-kit remote migrations — optional if using wrangler_personal alias)
+CLOUDFLARE_ACCOUNT_ID=2f06d6d6e20bbf55eb28d06f6e6b3b6a
+# CLOUDFLARE_API_TOKEN=your-api-token
+# CLOUDFLARE_D1_DATABASE_ID=your-d1-database-id
+
 BETTER_AUTH_SECRET=generate-a-random-secret-at-least-32-chars
 BETTER_AUTH_URL=http://localhost:3000
 BETTER_AUTH_TRUSTED_ORIGINS=http://localhost:3000
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+GOOGLE_CLIENT_ID=your-google-oauth-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-google-oauth-client-secret
 TMDB_API_KEY=your-tmdb-api-key
-RESEND_API_KEY=your-resend-api-key
+
+# Production URLs (wrangler.jsonc vars): https://watch-buddy.geass.workers.dev
+# Google redirect URI: {BETTER_AUTH_URL}/api/auth/callback/google
+# See dev/reference/google-oauth-credentials.md

@@ -78,9 +78,15 @@ npm run deploy    # Cloudflare Pages
 ```
 
 ### Required secrets (user configures)
-- `BETTER_AUTH_SECRET`
+- `BETTER_AUTH_SECRET` (session signing — still required with Google OAuth)
+- `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` (Google OAuth app login)
 - `TMDB_API_KEY`
-- `RESEND_API_KEY` (password reset emails)
+
+Google Cloud OAuth client redirect URI:
+- Local: `http://localhost:3000/api/auth/callback/google`
+- Production: `https://watch-buddy.geass.workers.dev/api/auth/callback/google`
+
+See `dev/reference/google-oauth-credentials.md` for full setup.
 
 ### Required bindings (`wrangler.jsonc`)
 - D1: `DATABASE`

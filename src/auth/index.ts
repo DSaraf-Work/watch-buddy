@@ -17,6 +17,12 @@ async function authBuilder() {
       .split(',')
       .map((origin) => origin.trim())
       .filter(Boolean),
+    socialProviders: {
+      google: {
+        clientId: env.GOOGLE_CLIENT_ID,
+        clientSecret: env.GOOGLE_CLIENT_SECRET,
+      },
+    },
     ...withCloudflare(
       {
         autoDetectIpAddress: true,
@@ -26,14 +32,6 @@ async function authBuilder() {
         kv: env.KV as any,
       },
       {
-        emailAndPassword: {
-          enabled: true,
-          minPasswordLength: 6,
-          sendResetPassword: async ({ user, url }) => {
-            // User configures Resend — log URL in dev until email is wired up
-            console.log(`[auth] Password reset for ${user.email}: ${url}`)
-          },
-        },
         rateLimit: {
           enabled: true,
           window: 60,
@@ -66,7 +64,12 @@ export const auth = betterAuth({
     schema,
     usePlural: true,
   }),
-  emailAndPassword: { enabled: true },
+  socialProviders: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID ?? '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
+    },
+  },
 })
 
 let authInstance: Awaited<ReturnType<typeof authBuilder>> | null = null

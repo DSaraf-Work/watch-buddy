@@ -37,10 +37,10 @@
 
 ## User-Owned Tasks (not automated)
 
-- [ ] Create Cloudflare account resources (D1, KV, R2) and fill IDs in `wrangler.jsonc`
-- [ ] Copy `.dev.vars.example` → `.dev.vars` and set secrets
-- [ ] Run `npm run db:migrate:local` and `npm run db:seed:platforms:local`
-- [ ] Configure Resend domain for password-reset emails
+- [x] Create Cloudflare account resources (D1, KV) and fill IDs in `wrangler.jsonc` — D1 `1675c5d6…`, KV `b36a27f0…` via `scripts/wrangler-personal.sh`
+- [ ] Create R2 bucket `watch-buddy-assets` (or via CI deploy workflow)
+- [ ] Copy `.dev.vars.example` → `.dev.vars` and set secrets (incl. `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`)
+- [ ] Add Watch-Buddy redirect URIs in Google Cloud Console — see `dev/reference/google-oauth-credentials.md`
 - [ ] Run `npm run preview` or `npm run deploy` and smoke test
 - [ ] Run Playwright E2E suite against new auth flows
 - [ ] Configure custom domain on Cloudflare Pages

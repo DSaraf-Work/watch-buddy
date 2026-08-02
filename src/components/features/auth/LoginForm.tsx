@@ -1,92 +1,70 @@
 'use client'
 
 import { useState, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { authClient } from '@/lib/auth/client'
 import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
 import { ROUTES } from '@/constants/routes'
 
+const AUTH_ERROR_MESSAGES: Record<string, string> = {
+  auth_not_configured: 'Google sign-in is not configured for this environment yet.',
+  access_denied: 'Google sign-in was cancelled. Please try again.',
+}
+
 function LoginFormContent() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get('redirectTo') || ROUTES.DASHBOARD
+  const routeErrorCode = searchParams.get('error') || ''
 
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const routeError = AUTH_ERROR_MESSAGES[routeErrorCode] || ''
+
+  const handleGoogleSignIn = async () => {
     setError('')
     setIsLoading(true)
 
     try {
-      const { error: signInError } = await authClient.signIn.email({
-        email,
-        password,
+      const { error: signInError } = await authClient.signIn.social({
+        provider: 'google',
+        callbackURL: redirectTo,
       })
 
       if (signInError) {
-        setError(signInError.message || 'Failed to sign in')
-        return
+        setError(signInError.message || 'Failed to start Google sign-in')
+        setIsLoading(false)
       }
-
-      router.push(redirectTo)
-      router.refresh()
     } catch (err) {
       setError('An unexpected error occurred. Please try again.')
-      console.error('Login error:', err)
-    } finally {
+      console.error('Google sign-in error:', err)
       setIsLoading(false)
     }
   }
 
+  const visibleError = error || routeError
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {error && (
+    <div className="space-y-4">
+      {visibleError && (
         <div className="rounded-lg bg-red-50 border border-red-200 p-4">
-          <p className="text-sm text-red-800">{error}</p>
+          <p className="text-sm text-red-800">{visibleError}</p>
         </div>
       )}
 
-      <Input
-        label="Email"
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="you@example.com"
-        required
-        autoComplete="email"
-        disabled={isLoading}
-      />
-
-      <Input
-        label="Password"
-        type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        placeholder="••••••••"
-        required
-        autoComplete="current-password"
-        disabled={isLoading}
-      />
-
-      <div className="flex items-center justify-end">
-        <Link
-          href={ROUTES.AUTH.FORGOT_PASSWORD}
-          className="text-sm text-primary-600 hover:text-primary-700 transition"
-        >
-          Forgot password?
-        </Link>
-      </div>
-
-      <Button type="submit" fullWidth isLoading={isLoading}>
-        Sign In
+      <Button
+        type="button"
+        fullWidth
+        isLoading={isLoading}
+        onClick={handleGoogleSignIn}
+      >
+        {isLoading ? 'Redirecting to Google...' : 'Continue with Google'}
       </Button>
-    </form>
+
+      <p className="text-center text-sm text-gray-600">
+        Watch-Buddy uses Google-only sign-in. New accounts are created automatically on first login.
+      </p>
+    </div>
   )
 }
 

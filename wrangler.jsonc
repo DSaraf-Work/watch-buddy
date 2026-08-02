@@ -1,6 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "watch-buddy",
+  "account_id": "2f06d6d6e20bbf55eb28d06f6e6b3b6a",
   "main": ".open-next/worker.js",
   "compatibility_date": "2025-03-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
@@ -19,14 +20,14 @@
     {
       "binding": "DATABASE",
       "database_name": "watch-buddy-db",
-      "database_id": "REPLACE_WITH_YOUR_D1_DATABASE_ID",
+      "database_id": "1675c5d6-b5dc-454f-8958-9e9a513c214e",
       "migrations_dir": "drizzle/migrations"
     }
   ],
   "kv_namespaces": [
     {
       "binding": "KV",
-      "id": "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
+      "id": "b36a27f0d91a41ad90d582385a22793e"
     }
   ],
   "r2_buckets": [
@@ -39,7 +40,8 @@
     "binding": "IMAGES"
   },
   "vars": {
-    "BETTER_AUTH_URL": "http://localhost:3000",
-    "BETTER_AUTH_TRUSTED_ORIGINS": "http://localhost:3000"
+    "BETTER_AUTH_URL": "https://watch-buddy.geass.workers.dev",
+    "BETTER_AUTH_TRUSTED_ORIGINS": "https://watch-buddy.geass.workers.dev,http://localhost:3000",
+    "NEXT_PUBLIC_APP_URL": "https://watch-buddy.geass.workers.dev"
   }
 }

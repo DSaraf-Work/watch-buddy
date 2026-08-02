@@ -8,7 +8,7 @@
 - Aggregated watch activity (manual, imported, or via extension — see `dev/reference/chrome-extension-watch-tracking.md`)
 - Track planned and finished content
 - Multi-user shared wishlists with sync capability
-- User authentication (unique email + password)
+- User authentication (Google OAuth via Better Auth)
 - [v2] Personalized insights and recommendations
 
 ### Tech Stack
@@ -37,13 +37,12 @@
   npm run dev        # Standard dev server (assumes port 3000 is free)
   ```
 
-### Test Credentials
-**CRITICAL**: Always use these credentials for testing authentication flows:
-- **Email**: `dheerajsaraf1996@gmail.com`
-- **Password**: `Abcd1234`
-- **Note**: This user is pre-verified and ready for testing
-- **Usage**: Use these credentials in ALL testing scenarios, Playwright tests, and manual testing
-- **Never** create new test users unless explicitly requested by the user
+### Test Authentication
+**CRITICAL**: Auth is Google-only. For manual and E2E testing:
+- Use a Google account you control (e.g. `dheerajsaraf1996@gmail.com`)
+- Configure `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `.dev.vars`
+- Register redirect URI: `http://localhost:3000/api/auth/callback/google`
+- **Never** commit OAuth secrets to the repo
 
 ### Git Commit Protocol (MANDATORY — End of Every Turn)
 - **ALWAYS** commit all code changes at the end of every agent turn before handing off to the user
@@ -90,9 +89,10 @@ bash scripts/auto-commit-turn.sh
 3. **Implement feature** following the plan
 4. **Update architecture** document with changes
 5. **Test thoroughly** using Playwright/Chrome MCP before handoff
-   - **ALWAYS use test credentials**: `dheerajsaraf1996@gmail.com` / `Abcd1234`
+   - **Use Google OAuth** for manual testing with your configured Google account
 6. **D1 migrations**: Use `npm run db:generate` + `npm run db:migrate:local` (or `db:migrate:remote` for production)
-7. **Commit all changes** via `scripts/auto-commit-turn.sh` before handoff (see Git Commit Protocol)
+7. **Cloudflare CLI**: On this Mac, use `wrangler_personal` (zsh alias) or `scripts/wrangler-personal.sh` — not bare `wrangler` / `npx wrangler`. Token is in `~/.zshrc` alias only. Account ID: `2f06d6d6e20bbf55eb28d06f6e6b3b6a` (also in `wrangler.jsonc`).
+8. **Commit all changes** via `scripts/auto-commit-turn.sh` before handoff (see Git Commit Protocol)
 
 ### Documentation Requirements
 - **Architecture**: Single file with indexed sections per functionality
@@ -151,7 +151,7 @@ watch-buddy/
 2. **DRY**: Don't Repeat Yourself - reuse aggressively
 3. **Document Changes**: Keep architecture doc current
 4. **Test Before Handoff**: No untested features to user
-5. **Cloudflare-Ready**: Use `wrangler dev` / `npm run preview` for full bindings; `npm run dev` for UI-only work
+5. **Cloudflare-Ready**: Use `scripts/wrangler-personal.sh` / `npm run preview` for full bindings; `npm run dev` for UI-only work
 6. **Plan Then Build**: Requirements → Implementation Plan → Code
 7. **Backward Compatible**: Never break existing functionality
 8. **Commit Every Turn**: Always commit all changes at the end of every turn — no exceptions
@@ -159,9 +159,7 @@ watch-buddy/
 ---
 
 ## User Authentication
-- Unique email per user
-- Unique password per user
-- Secure authentication flow
+- Google OAuth sign-in (Better Auth)
 
 ## Multi-User Features
 - Shared wishlists between users

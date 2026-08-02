@@ -41,7 +41,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  if (isAuthRoute && isAuthenticated && pathname !== ROUTES.AUTH.RESET_PASSWORD) {
+  if (isAuthRoute && isAuthenticated) {
     const url = request.nextUrl.clone()
     url.pathname = ROUTES.DASHBOARD
     return NextResponse.redirect(url)
