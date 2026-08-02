@@ -1,0 +1,133 @@
+name: Deploy To Cloudflare
+
+on:
+  push:
+    branches:
+      - master
+      - main
+      - ds-main
+  workflow_dispatch:
+    inputs:
+      skipLint:
+        description: Skip lint, type-check, and build validation before deploy
+        type: boolean
+        required: false
+        default: false
+      skipTests:
+        description: Skip Playwright tests before deploy
+        type: boolean
+        required: false
+        default: true
+      skipMigrations:
+        description: Skip D1 migration apply before deploy
+        type: boolean
+        required: false
+        default: false
+      skipSeed:
+        description: Skip OTT platform seed after migrations
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-watch-buddy-to-cloudflare
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy to Cloudflare
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      CI: true
+      SKIP_LINT: ${{ github.event_name == 'workflow_dispatch' && inputs.skipLint || false }}
+      SKIP_TESTS: ${{ github.event_name == 'workflow_dispatch' && inputs.skipTests || true }}
+      SKIP_MIGRATIONS: ${{ github.event_name == 'workflow_dispatch' && inputs.skipMigrations || false }}
+      SKIP_SEED: ${{ github.event_name == 'workflow_dispatch' && inputs.skipSeed || false }}
+      RUN_QUALITY_CHECKS: ${{ github.event_name == 'workflow_dispatch' || github.ref_name == 'master' || github.ref_name == 'main' || github.ref_name == 'ds-main' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Validate Cloudflare credentials
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "Missing CLOUDFLARE_API_TOKEN GitHub secret."
+            exit 1
+          fi
+          if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "Missing CLOUDFLARE_ACCOUNT_ID GitHub variable."
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Lint
+        if: env.RUN_QUALITY_CHECKS == 'true' && env.SKIP_LINT != 'true'
+        run: npm run lint
+
+      - name: Type-check
+        if: env.RUN_QUALITY_CHECKS == 'true' && env.SKIP_LINT != 'true'
+        run: npm run type-check
+
+      - name: Build
+        if: env.RUN_QUALITY_CHECKS == 'true' && env.SKIP_LINT != 'true'
+        run: npm run build
+
+      - name: Install Playwright browsers
+        if: env.RUN_QUALITY_CHECKS == 'true' && env.SKIP_TESTS != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Run tests
+        if: env.RUN_QUALITY_CHECKS == 'true' && env.SKIP_TESTS != 'true'
+        run: npm run test -- --project=chromium
+
+      - name: Ensure Cloudflare D1 database exists
+        if: env.SKIP_MIGRATIONS != 'true'
+        run: |
+          npx wrangler d1 create watch-buddy-db 2>&1 || true
+          ACTUAL_UUID=$(npx wrangler d1 list 2>/dev/null | grep "watch-buddy-db" | awk '{print $2}')
+          if [ -z "$ACTUAL_UUID" ]; then
+            echo "ERROR: Could not determine D1 database UUID for watch-buddy-db"
+            exit 1
+          fi
+          echo "Using D1 database: $ACTUAL_UUID"
+          sed -i "s/\"database_id\": \"[^\"]*\"/\"database_id\": \"$ACTUAL_UUID\"/" wrangler.jsonc
+
+      - name: Apply D1 migrations (remote)
+        if: env.SKIP_MIGRATIONS != 'true'
+        run: npm run db:migrate:remote
+
+      - name: Seed OTT platforms (remote)
+        if: env.SKIP_MIGRATIONS != 'true' && env.SKIP_SEED != 'true'
+        run: npm run db:seed:platforms:remote
+
+      - name: Ensure Cloudflare KV namespace exists
+        run: |
+          npx wrangler kv namespace create "watch-buddy-kv" 2>&1 || true
+          KV_ID=$(npx wrangler kv namespace list --json 2>/dev/null | jq -r '.[] | select(.title=="watch-buddy-kv") | .id' | head -1)
+          if [ -z "$KV_ID" ] || [ "$KV_ID" = "null" ]; then
+            echo "ERROR: Could not determine KV namespace ID for watch-buddy-kv"
+            exit 1
+          fi
+          echo "Using KV namespace: $KV_ID"
+          sed -i "s/\"id\": \"REPLACE_WITH_YOUR_KV_NAMESPACE_ID\"/\"id\": \"$KV_ID\"/" wrangler.jsonc
+
+      - name: Ensure Cloudflare R2 bucket exists
+        run: |
+          npx wrangler r2 bucket create watch-buddy-assets 2>&1 || true
+
+      - name: Deploy to Cloudflare
+        run: time npm run deploy

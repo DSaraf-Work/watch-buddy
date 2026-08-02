@@ -16,6 +16,7 @@
     "db:seed:platforms:remote": "wrangler d1 execute DATABASE --remote --file=scripts/seed-platforms.sql",
     "start": "next start -p 3000",
     "lint": "next lint",
+    "type-check": "tsc --noEmit",
     "test": "playwright test",
     "test:ui": "playwright test --ui",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\""
