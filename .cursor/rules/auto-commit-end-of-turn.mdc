@@ -1,0 +1,44 @@
+---
+description: Fast free end-of-turn auto-commit with strict title/body from turn context
+alwaysApply: true
+---
+
+# End-of-Turn Auto-Commit (lightweight)
+
+Before your final reply, if you changed files this turn, commit with **turn context** (no `git diff` / `git log`):
+
+```bash
+AUTO_COMMIT_USER="what the user asked (≤12 words)" \
+AUTO_COMMIT_DONE="what you changed (≤20 words)" \
+AUTO_COMMIT_TITLE="type(scope): specific imperative change" \
+AUTO_COMMIT_BODY="one line: what changed; why only if needed" \
+bash scripts/auto-commit-turn.sh
+```
+
+## Title rules (strict)
+- `type(scope): verb + specific change` — max 72 chars, no trailing period
+- `type`: feat | fix | refactor | docs | chore | test | ci | style | perf
+- `scope`: smallest accurate area (`auth`, `watchlist`, `web`, `cursor`, …)
+- Must name **what** changed, not "update files" / "misc changes"
+
+## Body rules (strict)
+- 1 line required when change is non-obvious; max 2 lines / 240 chars
+- State what was committed; add why only if title alone is unclear
+- No bullets, markdown, or filler
+
+## Examples
+```bash
+# good
+AUTO_COMMIT_TITLE="feat(watchlist): add shared wishlist sync toggle"
+AUTO_COMMIT_BODY="Expose sync control on wishlist settings; defaults to enabled for shared lists."
+
+# bad
+AUTO_COMMIT_TITLE="chore: updates"
+AUTO_COMMIT_BODY="Made some changes to the app."
+```
+
+## Speed
+- **Always** set `AUTO_COMMIT_TITLE` (+ `AUTO_COMMIT_BODY` when needed) — instant, uses your turn context
+- `AUTO_COMMIT_USER` + `AUTO_COMMIT_DONE` are fallbacks for Ollama/heuristic only
+- Clean tree → script no-ops instantly
+- Never push unless asked

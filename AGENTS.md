@@ -41,6 +41,39 @@
 - **Usage**: Use these credentials in ALL testing scenarios, Playwright tests, and manual testing
 - **Never** create new test users unless explicitly requested by the user
 
+### Git Commit Protocol (MANDATORY — End of Every Turn)
+- **ALWAYS** commit all code changes at the end of every agent turn before handing off to the user
+- A turn ends when the feature, fix, or task is complete and ready to be delivered
+- **Commit format** (Conventional Commits):
+  ```bash
+  AUTO_COMMIT_USER="what the user asked" \
+  AUTO_COMMIT_DONE="what you changed" \
+  AUTO_COMMIT_TITLE="type(scope): short description" \
+  AUTO_COMMIT_BODY="one line: what changed" \
+  bash scripts/auto-commit-turn.sh
+  ```
+  Where `type` is one of: `feat`, `fix`, `refactor`, `docs`, `chore`, `test`, `style`, `perf`
+- **Do NOT** leave uncommitted changes when handing off to the user
+- **Do NOT** batch unrelated changes into a single commit — use one commit per logical unit of work
+- **Never skip** this step, even for small or "trivial" changes
+- If the working tree is clean (no changes), skip silently — do not error
+- **Never push** unless the user explicitly asks
+
+**Example commit commands:**
+```bash
+# Feature work
+AUTO_COMMIT_TITLE="feat(watchlist): add keyword-based search filter" \
+bash scripts/auto-commit-turn.sh
+
+# Bug fix
+AUTO_COMMIT_TITLE="fix(auth): resolve session expiry race condition" \
+bash scripts/auto-commit-turn.sh
+
+# Docs / config
+AUTO_COMMIT_TITLE="docs(agents): add git commit protocol rule" \
+bash scripts/auto-commit-turn.sh
+```
+
 ---
 
 ## Development Workflow
@@ -55,6 +88,7 @@
 5. **Test thoroughly** using Playwright/Chrome MCP before handoff
    - **ALWAYS use test credentials**: `dheerajsaraf1996@gmail.com` / `Abcd1234`
 6. **Supabase** Use supabase mcp server to create or perform any db migrations or set any policies or anything that is achievable using this mcp server
+7. **Commit all changes** via `scripts/auto-commit-turn.sh` before handoff (see Git Commit Protocol)
 
 ### Documentation Requirements
 - **Architecture**: Single file with indexed sections per functionality
@@ -116,6 +150,7 @@ watch-buddy/
 5. **Vercel-Ready**: Follow Vercel conventions from day one
 6. **Plan Then Build**: Requirements → Implementation Plan → Code
 7. **Backward Compatible**: Never break existing functionality
+8. **Commit Every Turn**: Always commit all changes at the end of every turn — no exceptions
 
 ---
 
@@ -138,5 +173,5 @@ watch-buddy/
 
 ---
 
-**Last Updated**: 2025-10-21
+**Last Updated**: 2026-08-03
 
