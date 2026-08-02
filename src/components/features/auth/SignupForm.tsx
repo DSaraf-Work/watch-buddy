@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { authClient } from '@/lib/auth/client'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { ROUTES } from '@/constants/routes'
@@ -42,41 +42,20 @@ export function SignupForm() {
     setIsLoading(true)
 
     try {
-      const supabase = createClient()
-      const { data, error: signUpError } = await supabase.auth.signUp({
+      const { data, error: signUpError } = await authClient.signUp.email({
         email,
         password,
-        options: {
-          data: {
-            display_name: displayName || email.split('@')[0],
-          },
-          emailRedirectTo: `${window.location.origin}${ROUTES.AUTH.CALLBACK}`,
-        },
+        name: displayName || email.split('@')[0],
       })
 
       if (signUpError) {
-        setError(signUpError.message)
+        setError(signUpError.message || 'Failed to create account')
         return
       }
 
-      if (data.user) {
-        // Check if email confirmation is required
-        if (data.user.identities && data.user.identities.length === 0) {
-          setError('An account with this email already exists')
-          return
-        }
-
-        // If email confirmation is disabled, redirect to dashboard
-        // Otherwise, show a message to check email
-        if (data.session) {
-          router.push(ROUTES.DASHBOARD)
-          router.refresh()
-        } else {
-          // Email confirmation required
-          setError('')
-          alert('Please check your email to confirm your account before logging in.')
-          router.push(ROUTES.AUTH.LOGIN)
-        }
+      if (data?.user) {
+        router.push(ROUTES.DASHBOARD)
+        router.refresh()
       }
     } catch (err) {
       setError('An unexpected error occurred. Please try again.')
@@ -145,4 +124,3 @@ export function SignupForm() {
     </form>
   )
 }
-

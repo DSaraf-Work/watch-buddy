@@ -1,7 +1,8 @@
 import { Suspense } from 'react'
 import { StatusManagement } from '@/components/features/admin/StatusManagement'
-import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { requireUser } from '@/lib/auth/server'
+import { ROUTES } from '@/constants/routes'
 
 export const metadata = {
   title: 'Settings - Watch Buddy',
@@ -9,29 +10,18 @@ export const metadata = {
 }
 
 export default async function AdminPage() {
-  const supabase = await createClient()
-  
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect('/login')
-  }
+  const user = await requireUser()
+  if (!user) redirect(ROUTES.AUTH.LOGIN)
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-            <p className="mt-2 text-gray-600">
-              Customize your Watch Buddy experience
-            </p>
+            <p className="mt-2 text-gray-600">Customize your Watch Buddy experience</p>
           </div>
 
-          {/* Settings Sections */}
           <div className="space-y-6">
             <Suspense fallback={<SettingsSkeleton />}>
               <StatusManagement />
@@ -55,4 +45,3 @@ function SettingsSkeleton() {
     </div>
   )
 }
-

@@ -23,9 +23,9 @@
 
 | Phase | Scope | Status | Commit |
 |-------|-------|--------|--------|
-| 0 | Cloudflare foundation (OpenNext, wrangler, Drizzle scaffold) | Complete | pending |
-| 1 | Auth + Profiles (Better Auth, middleware, auth pages) | In Progress | — |
-| 2 | TMDB + Search + Content Detail (D1 schema, KV cache, APIs) | Pending | — |
+| 0 | Cloudflare foundation (OpenNext, wrangler, Drizzle scaffold) | Complete | `95edffb` |
+| 1 | Auth + Profiles (Better Auth, middleware, auth pages) | Complete | pending |
+| 2 | TMDB + Search + Content Detail (D1 schema, KV cache, APIs) | In Progress | — |
 | 3 | User Content Status + Preferences | Pending | — |
 | 4 | Watchlist Management (schema + APIs) | Pending | — |
 | 5 | Watch History (schema + APIs) | Pending | — |
@@ -73,12 +73,14 @@
 **Goal**: Replace Supabase Auth with Better Auth on D1.
 
 ### Tasks
-- [ ] Better Auth + Drizzle auth schema on D1
-- [ ] `profiles` table + signup hook
-- [ ] `/api/auth/[...all]` route
-- [ ] Rewrite middleware for session guard
-- [ ] Rewrite auth forms, hooks, AuthProvider
-- [ ] Profile API route
+- [x] Better Auth + Drizzle auth schema on D1
+- [x] `profiles` table + signup hook
+- [x] `/api/auth/[...all]` route
+- [x] Rewrite middleware for session guard
+- [x] Rewrite auth forms, hooks, AuthProvider
+- [x] Profile API route (`/api/profile`)
+- [x] D1 migration `0001_auth_profiles.sql`
+- [x] Remove Supabase OAuth callback route
 
 ### Exit criteria
 - Signup → profile created → dashboard

@@ -3,7 +3,7 @@
 import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
+import { authClient } from '@/lib/auth/client'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { ROUTES } from '@/constants/routes'
@@ -24,21 +24,18 @@ function LoginFormContent() {
     setIsLoading(true)
 
     try {
-      const supabase = createClient()
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+      const { error: signInError } = await authClient.signIn.email({
         email,
         password,
       })
 
       if (signInError) {
-        setError(signInError.message)
+        setError(signInError.message || 'Failed to sign in')
         return
       }
 
-      if (data.user) {
-        router.push(redirectTo)
-        router.refresh()
-      }
+      router.push(redirectTo)
+      router.refresh()
     } catch (err) {
       setError('An unexpected error occurred. Please try again.')
       console.error('Login error:', err)
@@ -100,4 +97,3 @@ export function LoginForm() {
     </Suspense>
   )
 }
-

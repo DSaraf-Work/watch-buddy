@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { useAuth } from './useAuth'
+import { fetchJson } from '@/lib/utils/fetch-json'
 
-interface Profile {
+export interface Profile {
   id: string
   email: string
   display_name: string | null
@@ -30,16 +30,8 @@ export function useUser() {
 
     const fetchProfile = async () => {
       try {
-        const supabase = createClient()
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single()
-
-        if (error) throw error
-
-        setProfile(data)
+        const data = await fetchJson<{ profile: Profile }>('/api/profile')
+        setProfile(data.profile)
         setError(null)
       } catch (err) {
         console.error('Error fetching profile:', err)
@@ -56,18 +48,13 @@ export function useUser() {
     if (!user) return { error: 'No user logged in' }
 
     try {
-      const supabase = createClient()
-      const { data, error } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', user.id)
-        .select()
-        .single()
-
-      if (error) throw error
-
-      setProfile(data)
-      return { data, error: null }
+      const data = await fetchJson<{ profile: Profile }>('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      })
+      setProfile(data.profile)
+      return { data: data.profile, error: null }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update profile'
       return { data: null, error: errorMessage }
@@ -82,4 +69,3 @@ export function useUser() {
     updateProfile,
   }
 }
-

@@ -1,12 +1,15 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
-import { User, Session } from '@supabase/supabase-js'
-import { createClient } from '@/lib/supabase/client'
+import { createContext, useContext } from 'react'
+import { authClient } from '@/lib/auth/client'
 
-interface AuthContextType {
-  user: User | null
-  session: Session | null
+type AuthContextType = {
+  user: ReturnType<typeof authClient.useSession>['data'] extends infer D
+    ? D extends { user: infer U }
+      ? U | null
+      : null
+    : null
+  session: ReturnType<typeof authClient.useSession>['data']
   loading: boolean
   signOut: () => Promise<void>
 }
@@ -14,45 +17,24 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [session, setSession] = useState<Session | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const supabase = createClient()
-
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
-
-    return () => subscription.unsubscribe()
-  }, [])
+  const { data: session, isPending } = authClient.useSession()
 
   const signOut = async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
+    await authClient.signOut()
   }
 
-  const value = {
-    user,
-    session,
-    loading,
-    signOut,
-  }
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider
+      value={{
+        user: session?.user ?? null,
+        session: session ?? null,
+        loading: isPending,
+        signOut,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  )
 }
 
 export function useAuthContext() {
@@ -62,4 +44,3 @@ export function useAuthContext() {
   }
   return context
 }
-

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { authClient } from '@/lib/auth/client'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { ROUTES } from '@/constants/routes'
@@ -19,16 +19,13 @@ export function ForgotPasswordForm() {
     setIsLoading(true)
 
     try {
-      const supabase = createClient()
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+      const { error: resetError } = await authClient.requestPasswordReset({
         email,
-        {
-          redirectTo: `${window.location.origin}${ROUTES.AUTH.RESET_PASSWORD}`,
-        }
-      )
+        redirectTo: `${window.location.origin}${ROUTES.AUTH.RESET_PASSWORD}`,
+      })
 
       if (resetError) {
-        setError(resetError.message)
+        setError(resetError.message || 'Failed to send reset email')
         return
       }
 
@@ -76,4 +73,3 @@ export function ForgotPasswordForm() {
     </form>
   )
 }
-

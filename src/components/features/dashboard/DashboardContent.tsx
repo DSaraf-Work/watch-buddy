@@ -1,32 +1,22 @@
 'use client'
 
-import { User } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { authClient } from '@/lib/auth/client'
 import { Button } from '@/components/ui/Button'
 import { ROUTES } from '@/constants/routes'
 import Link from 'next/link'
-
-interface Profile {
-  id: string
-  email: string
-  display_name: string | null
-  avatar_url: string | null
-  created_at: string
-  updated_at: string
-}
+import type { AppProfile, AppUser } from '@/types/user'
 
 interface DashboardContentProps {
-  user: User
-  profile: Profile | null
+  user: AppUser
+  profile: AppProfile | null
 }
 
 export function DashboardContent({ user, profile }: DashboardContentProps) {
   const router = useRouter()
 
   const handleLogout = async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
+    await authClient.signOut()
     router.push(ROUTES.HOME)
     router.refresh()
   }
@@ -145,7 +135,7 @@ export function DashboardContent({ user, profile }: DashboardContentProps) {
               <div className="flex justify-between">
                 <dt className="text-gray-600">Member Since:</dt>
                 <dd className="font-medium text-gray-900">
-                  {new Date(user.created_at).toLocaleDateString()}
+                  {new Date(user.createdAt).toLocaleDateString()}
                 </dd>
               </div>
             </dl>

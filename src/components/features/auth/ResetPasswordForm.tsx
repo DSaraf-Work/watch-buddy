@@ -1,14 +1,16 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { authClient } from '@/lib/auth/client'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { ROUTES } from '@/constants/routes'
 
-export function ResetPasswordForm() {
+function ResetPasswordFormContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const token = searchParams.get('token') || ''
 
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -26,6 +28,11 @@ export function ResetPasswordForm() {
       return false
     }
 
+    if (!token) {
+      setError('Invalid or missing reset token. Please request a new reset link.')
+      return false
+    }
+
     return true
   }
 
@@ -40,17 +47,16 @@ export function ResetPasswordForm() {
     setIsLoading(true)
 
     try {
-      const supabase = createClient()
-      const { error: updateError } = await supabase.auth.updateUser({
-        password,
+      const { error: updateError } = await authClient.resetPassword({
+        newPassword: password,
+        token,
       })
 
       if (updateError) {
-        setError(updateError.message)
+        setError(updateError.message || 'Failed to reset password')
         return
       }
 
-      alert('Password updated successfully!')
       router.push(ROUTES.DASHBOARD)
       router.refresh()
     } catch (err) {
@@ -99,3 +105,10 @@ export function ResetPasswordForm() {
   )
 }
 
+export function ResetPasswordForm() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ResetPasswordFormContent />
+    </Suspense>
+  )
+}

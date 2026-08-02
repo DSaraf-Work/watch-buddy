@@ -1,26 +1,18 @@
 'use client'
 
 import { useState } from 'react'
-import { User } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { authClient } from '@/lib/auth/client'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { ROUTES } from '@/constants/routes'
 import Link from 'next/link'
-
-interface Profile {
-  id: string
-  email: string
-  display_name: string | null
-  avatar_url: string | null
-  created_at: string
-  updated_at: string
-}
+import type { AppProfile, AppUser } from '@/types/user'
+import { fetchJson } from '@/lib/utils/fetch-json'
 
 interface ProfileContentProps {
-  user: User
-  profile: Profile | null
+  user: AppUser
+  profile: AppProfile | null
 }
 
 export function ProfileContent({ user, profile }: ProfileContentProps) {
@@ -32,8 +24,7 @@ export function ProfileContent({ user, profile }: ProfileContentProps) {
   const [isLoading, setIsLoading] = useState(false)
 
   const handleLogout = async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
+    await authClient.signOut()
     router.push(ROUTES.HOME)
     router.refresh()
   }
@@ -44,16 +35,11 @@ export function ProfileContent({ user, profile }: ProfileContentProps) {
     setIsLoading(true)
 
     try {
-      const supabase = createClient()
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ display_name: displayName })
-        .eq('id', user.id)
-
-      if (updateError) {
-        setError(updateError.message)
-        return
-      }
+      await fetchJson('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ display_name: displayName }),
+      })
 
       setSuccess(true)
       setIsEditing(false)
@@ -175,7 +161,7 @@ export function ProfileContent({ user, profile }: ProfileContentProps) {
                   Member Since
                 </label>
                 <p className="rounded-lg border border-gray-300 bg-gray-50 px-4 py-2 text-gray-900">
-                  {new Date(user.created_at).toLocaleDateString('en-US', {
+                  {new Date(user.createdAt).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',
