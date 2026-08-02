@@ -1,4 +1,5 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare'
+import type { KVNamespace } from '@cloudflare/workers-types'
 import { betterAuth } from 'better-auth'
 import { withCloudflare } from 'better-auth-cloudflare'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
@@ -37,7 +38,7 @@ async function authBuilder() {
         geolocationTracking: true,
         cf: cf ?? {},
         d1: { db, options: { usePlural: true } },
-        kv: env.KV as any,
+        kv: env.KV as unknown as KVNamespace,
       },
       {
         rateLimit: {

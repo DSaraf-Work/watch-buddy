@@ -159,7 +159,7 @@ export function SearchContent() {
         </>
       ) : query ? (
         <div className="text-center py-12">
-          <p className="text-gray-600">No results found for "{query}"</p>
+          <p className="text-gray-600">No results found for &ldquo;{query}&rdquo;</p>
           <p className="text-sm text-gray-500 mt-2">Try different keywords or filters</p>
         </div>
       ) : (
