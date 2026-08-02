@@ -27,6 +27,8 @@ interface WatchlistDetail {
       title: string
       content_type: 'movie' | 'series'
       poster_path: string | null
+      release_date: string | null
+      genres?: Array<{ id: number; name: string }>
     } | null
   }>
   members: Array<{
@@ -43,10 +45,19 @@ export function WatchlistDetailContent({ watchlistId }: { watchlistId: string })
   const [error, setError] = useState<string | null>(null)
   const [memberEmail, setMemberEmail] = useState('')
   const [inviting, setInviting] = useState(false)
+  const [sort, setSort] = useState('added_at')
+  const [order, setOrder] = useState('desc')
+  const [type, setType] = useState('all')
+  const [genre, setGenre] = useState('')
+  const [markingId, setMarkingId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     try {
-      const response = await fetchJson<WatchlistDetail>(`/api/watchlists/${watchlistId}`)
+      const params = new URLSearchParams({ sort, order, type })
+      if (genre.trim()) params.set('genre', genre.trim())
+      const response = await fetchJson<WatchlistDetail>(
+        `/api/watchlists/${watchlistId}?${params.toString()}`
+      )
       setData(response)
       setError(null)
     } catch (err) {
@@ -54,7 +65,7 @@ export function WatchlistDetailContent({ watchlistId }: { watchlistId: string })
     } finally {
       setLoading(false)
     }
-  }, [watchlistId])
+  }, [watchlistId, sort, order, type, genre])
 
   useEffect(() => {
     load()
@@ -63,6 +74,20 @@ export function WatchlistDetailContent({ watchlistId }: { watchlistId: string })
   const removeItem = async (itemId: string) => {
     await fetchJson(`/api/watchlists/${watchlistId}/items/${itemId}`, { method: 'DELETE' })
     await load()
+  }
+
+  const markWatched = async (itemId: string) => {
+    setMarkingId(itemId)
+    try {
+      await fetchJson(`/api/watchlists/${watchlistId}/items/${itemId}/mark-watched`, {
+        method: 'POST',
+      })
+      await load()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to mark as watched')
+    } finally {
+      setMarkingId(null)
+    }
   }
 
   const inviteMember = async (e: React.FormEvent) => {
@@ -118,10 +143,55 @@ export function WatchlistDetailContent({ watchlistId }: { watchlistId: string })
       </div>
 
       <section>
+        <div className="mb-4 flex flex-wrap items-end gap-3">
+          <label className="text-sm text-gray-700">
+            Sort
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+              className="mt-1 block rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+            >
+              <option value="added_at">Date added</option>
+              <option value="title">Title</option>
+              <option value="release_date">Release date</option>
+            </select>
+          </label>
+          <label className="text-sm text-gray-700">
+            Order
+            <select
+              value={order}
+              onChange={(e) => setOrder(e.target.value)}
+              className="mt-1 block rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+            >
+              <option value="desc">Descending</option>
+              <option value="asc">Ascending</option>
+            </select>
+          </label>
+          <label className="text-sm text-gray-700">
+            Type
+            <select
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+              className="mt-1 block rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+            >
+              <option value="all">All</option>
+              <option value="movie">Movies</option>
+              <option value="series">Series</option>
+            </select>
+          </label>
+          <Input
+            label="Genre filter"
+            value={genre}
+            onChange={(e) => setGenre(e.target.value)}
+            placeholder="e.g. Drama"
+            className="max-w-xs"
+          />
+        </div>
+
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Items ({data.items.length})</h2>
         {data.items.length === 0 ? (
           <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-gray-600">
-            No items yet. Add titles from search or a content page.
+            No items match your filters.
           </div>
         ) : (
           <div className="space-y-3">
@@ -155,11 +225,20 @@ export function WatchlistDetailContent({ watchlistId }: { watchlistId: string })
                       <p className="font-semibold text-gray-900">Unknown title</p>
                     )}
                   </div>
-                  {canManage && (
-                    <Button variant="outline" size="sm" onClick={() => removeItem(item.id)}>
-                      Remove
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => markWatched(item.id)}
+                      isLoading={markingId === item.id}
+                    >
+                      Mark watched
                     </Button>
-                  )}
+                    {canManage && (
+                      <Button variant="outline" size="sm" onClick={() => removeItem(item.id)}>
+                        Remove
+                      </Button>
+                    )}
+                  </div>
                 </article>
               )
             })}

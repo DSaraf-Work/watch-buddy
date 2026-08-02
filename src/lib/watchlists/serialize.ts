@@ -33,6 +33,7 @@ export function serializeWatchlistItem(
           content_type: contentRow.contentType,
           poster_path: contentRow.posterPath,
           release_date: contentRow.releaseDate,
+          genres: contentRow.genres ?? [],
         }
       : null,
   }

@@ -114,7 +114,12 @@ export function WatchlistContent() {
       )}
 
       <section>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Your Watchlists</h2>
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <h2 className="text-lg font-semibold text-gray-900">Your Watchlists</h2>
+          <Link href={ROUTES.WATCHLIST.SHARED} className="text-sm text-blue-700 hover:underline">
+            Shared watchlists →
+          </Link>
+        </div>
         {watchlists.length === 0 ? (
           <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-gray-600">
             No watchlists yet. Create one above or add titles from search.
