@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { ROUTES } from '@/constants/routes'
 import { fetchJson } from '@/lib/utils/fetch-json'
 
 interface Watchlist {
@@ -97,7 +99,7 @@ export function WatchlistContent() {
               onChange={(e) => setIsShared(e.target.checked)}
               className="rounded border-gray-300"
             />
-            Shared watchlist (invite members coming soon)
+            Shared watchlist — invite members on the watchlist page
           </label>
           <Button type="submit" isLoading={creating}>
             Create Watchlist
@@ -120,10 +122,13 @@ export function WatchlistContent() {
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
             {watchlists.map((watchlist) => (
-              <article
+              <Link
                 key={watchlist.id}
-                className="rounded-lg bg-white p-5 shadow-sm border border-gray-200"
+                href={ROUTES.WATCHLIST.DETAIL(watchlist.id)}
+                aria-label={watchlist.name}
+                className="block rounded-lg bg-white p-5 shadow-sm border border-gray-200 transition hover:border-blue-300"
               >
+                <article>
                 <div className="flex items-start justify-between gap-2">
                   <h3 className="font-semibold text-gray-900">{watchlist.name}</h3>
                   {watchlist.is_shared && (
@@ -138,7 +143,8 @@ export function WatchlistContent() {
                 <p className="mt-3 text-xs text-gray-500">
                   Created {new Date(watchlist.created_at).toLocaleDateString()}
                 </p>
-              </article>
+                </article>
+              </Link>
             ))}
           </div>
         )}

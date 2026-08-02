@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ROUTES } from '@/constants/routes'
 import { fetchJson } from '@/lib/utils/fetch-json'
+import { HistoryEntryForm } from './HistoryEntryForm'
 
 interface HistoryEntry {
   id: string
@@ -30,46 +31,52 @@ export function HistoryContent() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const data = await fetchJson<{ history: HistoryEntry[] }>('/api/history')
-        setHistory(data.history)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load history')
-      } finally {
-        setLoading(false)
-      }
+  const load = useCallback(async () => {
+    try {
+      const data = await fetchJson<{ history: HistoryEntry[] }>('/api/history')
+      setHistory(data.history)
+      setError(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load history')
+    } finally {
+      setLoading(false)
     }
-    load()
   }, [])
+
+  useEffect(() => {
+    load()
+  }, [load])
 
   if (loading) {
     return <p className="text-gray-600">Loading watch history...</p>
   }
 
-  if (error) {
-    return (
-      <div className="rounded-lg bg-red-50 border border-red-200 p-4 text-sm text-red-800">
-        {error}
-      </div>
-    )
-  }
+  return (
+    <div className="space-y-8">
+      {error && (
+        <div className="rounded-lg bg-red-50 border border-red-200 p-4 text-sm text-red-800">
+          {error}
+        </div>
+      )}
 
-  if (history.length === 0) {
-    return (
-      <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center">
-        <p className="text-gray-600 mb-4">No watch history yet.</p>
-        <Link href={ROUTES.SEARCH} className="text-blue-700 hover:underline font-medium">
-          Search for something to watch
+      <div className="flex items-center justify-between gap-4">
+        <Link href={ROUTES.HISTORY.STATS} className="text-sm font-medium text-blue-700 hover:underline">
+          View watch stats →
         </Link>
       </div>
-    )
-  }
 
-  return (
-    <div className="space-y-4">
-      {history.map((entry) => {
+      <HistoryEntryForm onCreated={load} />
+
+      {history.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center">
+          <p className="text-gray-600 mb-4">No watch history yet.</p>
+          <Link href={ROUTES.SEARCH} className="text-blue-700 hover:underline font-medium">
+            Search for something to watch
+          </Link>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {history.map((entry) => {
         const content = entry.content
         const contentPath = content
           ? ROUTES.CONTENT(`${content.tmdb_id}-${content.content_type}`)
@@ -117,6 +124,8 @@ export function HistoryContent() {
           </article>
         )
       })}
+        </div>
+      )}
     </div>
   )
 }

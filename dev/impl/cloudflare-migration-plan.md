@@ -1,123 +1,60 @@
 # Watch-Buddy: Cloudflare-Native Migration Plan
 
-**Status**: Complete  
-**Started**: 2026-08-03  
-**Completed**: 2026-08-03  
+**Status**: Complete (core migration + post-migration product pass)  
 **Target**: Fully Cloudflare-native stack (Pages + Workers + D1 + KV + R2 + Better Auth)
+
+See [`docs/architecture.md`](../../docs/architecture.md) for the current system design.
 
 ---
 
-## Stack Target
+## Stack (final)
 
 | Layer | Technology |
 |-------|------------|
 | Hosting | Cloudflare Pages + Workers (OpenNext) |
-| Auth | Better Auth + better-auth-cloudflare |
+| Auth | Better Auth + Google OAuth |
 | Database | D1 + Drizzle ORM |
 | Cache | KV (TMDB hot cache) |
-| Storage | R2 (avatars) |
+| Storage | R2 (avatars via `/api/assets`) |
 | External API | TMDB |
 
 ---
 
-## Phase Tracker
+## Phase tracker (commits on `ds-main`)
 
-| Phase | Scope | Status | Commit |
-|-------|-------|--------|--------|
-| 0 | Cloudflare foundation (OpenNext, wrangler, Drizzle scaffold) | Complete | `95edffb` |
-| 1 | Auth + Profiles (Better Auth, middleware, auth pages) | Complete | `ee3324d` |
-| 2 | TMDB + Search + Content Detail (D1 schema, KV cache, APIs) | Complete | `94c6334` |
-| 3 | User Content Status + Preferences | Complete | `c50b77d` |
-| 4 | Watchlist Management (schema + APIs) | Complete | `87b5ed0` |
-| 5 | Watch History (schema + APIs) | Complete | `4dcce52` |
-| 6 | Insights schema stub + architecture docs | Complete | `d5bc96b` |
-| 7 | Cleanup (remove Supabase, R2 helpers, polish) | Complete | `1be9791` |
+| Phase | Scope | Commit |
+|-------|-------|--------|
+| 0–7 | Cloudflare foundation through Supabase removal | `95edffb` … `1be9791` |
+| — | Watchlist/history UI | `912feeb` |
+| — | Full insights computation | `6c11cb4` |
+| — | Playwright Better Auth cookies | `bb22d07` |
+| — | R2 assets route | `7a8d36d` |
+| — | Docs + deploy pipeline | `4d069ae`, `4ad5d3f` |
 
 ---
 
-## User-Owned Tasks (not automated)
+## User-owned (completed by user)
 
-- [x] Create Cloudflare account resources (D1, KV) and fill IDs in `wrangler.jsonc` — D1 `1675c5d6…`, KV `b36a27f0…` via `scripts/wrangler-personal.sh`
-- [ ] Create R2 bucket `watch-buddy-assets` (or via CI deploy workflow)
-- [ ] Copy `.dev.vars.example` → `.dev.vars` and set secrets (incl. `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`)
-- [ ] Add Watch-Buddy redirect URIs in Google Cloud Console — see `dev/reference/google-oauth-credentials.md`
-- [ ] Run `npm run preview` or `npm run deploy` and smoke test
-- [ ] Run Playwright E2E suite against new auth flows
-- [ ] Configure custom domain on Cloudflare Pages
+- [x] Cloudflare D1/KV/R2 resources and secrets
+- [x] Google OAuth redirect URIs
+- [x] Production deploy + smoke test
+- [x] Custom domain (optional)
 
 ---
 
-## Phase 0: Cloudflare Foundation ✅
+## Post-migration product work (implemented)
 
-- [x] OpenNext + wrangler + Drizzle scaffold
-- [x] Next.js 15 + React 19 upgrade
-- [x] `/api/health` endpoint
-- [x] Removed `vercel.json`
-
----
-
-## Phase 1: Auth + Profiles ✅
-
-- [x] Better Auth on D1 with KV sessions
-- [x] `profiles` table + signup hook
-- [x] Auth middleware + protected routes
-- [x] Login/signup/forgot/reset forms
-- [x] `/api/profile` route
-- [x] Migration `0001_auth_profiles.sql`
-
----
-
-## Phase 2: TMDB + Search + Content ✅
-
-- [x] D1 tables: `content`, `ott_platforms`, `content_availability`
-- [x] KV cache layer (`src/lib/cache/kv.ts`)
-- [x] Rewrote `src/lib/tmdb/cache.ts` (KV + D1)
-- [x] API routes: search, content, platforms, person
-- [x] Platform seed script (`scripts/seed-platforms.sql`)
-- [x] Migration `0002_app_tables.sql`
-
----
-
-## Phase 3: User Content Status + Preferences ✅
-
-- [x] D1 tables: `user_content_status`, `user_status_preferences`
-- [x] API routes rewritten with Drizzle + `requireUser()`
-
----
-
-## Phase 4: Watchlist Management ✅
-
-- [x] D1 tables: `watchlists`, `watchlist_members`, `watchlist_items`
-- [x] `/api/watchlists` GET + POST
-
----
-
-## Phase 5: Watch History ✅
-
-- [x] D1 tables: `watch_history`, `watch_sessions`
-- [x] `/api/history` GET + POST
-
----
-
-## Phase 6: Insights + Documentation ✅
-
-- [x] D1 tables: `user_preferences`, `recommendations` (stub)
-- [x] `/api/insights` GET stub
-- [x] Rewrote `docs/architecture.md`
-
----
-
-## Phase 7: Cleanup + Polish ✅
-
-- [x] Removed `@supabase/*` packages and `src/lib/supabase/`
-- [x] Removed legacy `supabase/migrations/`
-- [x] Added R2 avatar helper (`src/lib/storage/r2.ts`)
-- [x] Updated `AGENTS.md` for Cloudflare workflow
+- Watchlist items + shared members APIs and detail UI
+- History manual entry, stats page, dashboard live stats
+- Profile avatar upload (R2)
+- Insights bar charts + `/recommendations` page
+- Broader Playwright product E2E coverage
+- Legacy Supabase/Vercel docs archived under `docs/archive/`
 
 ---
 
 ## Notes
 
-- Authorization replaces Supabase RLS via `requireUser()` + scoped queries.
-- TMDB cache: KV primary (24h TTL), D1 for relational FK anchor.
+- Authorization uses `requireUser()` + scoped queries (no RLS).
+- TMDB cache: KV primary (24h TTL), D1 for relational joins.
 - IDs are TEXT UUIDs (`crypto.randomUUID()`).

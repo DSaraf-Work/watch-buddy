@@ -57,16 +57,26 @@ Supabase RLS is replaced by **application-level authorization**:
 |-------|---------|
 | `/api/auth/[...all]` | Better Auth handler |
 | `/api/health` | Platform health check |
-| `/api/profile` | User profile CRUD |
+| `/api/profile` | User profile GET/PATCH |
+| `/api/profile/avatar` | Avatar upload (R2) |
+| `/api/dashboard/stats` | Dashboard aggregate stats |
 | `/api/search` | TMDB search |
 | `/api/content/[id]` | Content detail + India providers |
 | `/api/content/[id]/status` | User content status |
 | `/api/platforms` | OTT platform list |
 | `/api/person/[id]` | Person filmography |
 | `/api/user/status-preferences` | Status label customization |
-| `/api/watchlists` | Watchlist CRUD (list/create) |
-| `/api/history` | Watch history (list/create) |
-| `/api/insights` | GET preferences/recommendations; POST compute insights |
+| `/api/watchlists` | Watchlist list/create |
+| `/api/watchlists/[id]` | Watchlist detail/update/delete |
+| `/api/watchlists/[id]/items` | Add watchlist item |
+| `/api/watchlists/[id]/items/[itemId]` | Remove watchlist item |
+| `/api/watchlists/[id]/members` | Invite shared member |
+| `/api/watchlists/[id]/members/[userId]` | Remove shared member |
+| `/api/history` | Watch history list/create |
+| `/api/history/[id]` | Update/delete history entry |
+| `/api/history/stats` | History statistics |
+| `/api/insights` | GET preferences/recommendations; POST compute |
+| `/api/insights/stats` | Insights/history stats alias |
 | `/api/assets/[[...key]]` | Serve public R2 assets (avatars) |
 
 ---

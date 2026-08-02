@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
+import { BarChart } from '@/components/ui/BarChart'
 import { ROUTES } from '@/constants/routes'
 import { fetchJson } from '@/lib/utils/fetch-json'
 import type { InsightsData } from '@/lib/db/schema/app'
@@ -122,25 +123,30 @@ export function InsightsContent() {
       {insights && (
         <div className="grid gap-6 lg:grid-cols-2">
           <BreakdownCard title="Genre Breakdown" emptyMessage="No genre data yet.">
-            {insights.genre_breakdown.slice(0, 8).map((item) => (
-              <BreakdownRow key={item.genre} label={item.genre} count={item.count} />
-            ))}
+            <BarChart
+              items={(insights.genre_breakdown.slice(0, 8) ?? []).map((item) => ({
+                label: item.genre,
+                value: item.count,
+              }))}
+            />
           </BreakdownCard>
 
           <BreakdownCard title="Platform Usage" emptyMessage="No platform data yet.">
-            {insights.platform_breakdown.slice(0, 8).map((item) => (
-              <BreakdownRow
-                key={item.platform_id}
-                label={item.platform_name}
-                count={item.count}
-              />
-            ))}
+            <BarChart
+              items={(insights.platform_breakdown.slice(0, 8) ?? []).map((item) => ({
+                label: item.platform_name,
+                value: item.count,
+              }))}
+            />
           </BreakdownCard>
 
           <BreakdownCard title="Monthly Activity" emptyMessage="No viewing activity yet.">
-            {insights.monthly_activity.slice(-6).map((item) => (
-              <BreakdownRow key={item.month} label={item.month} count={item.count} />
-            ))}
+            <BarChart
+              items={(insights.monthly_activity.slice(-6) ?? []).map((item) => ({
+                label: item.month,
+                value: item.count,
+              }))}
+            />
           </BreakdownCard>
 
           <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200">
@@ -164,7 +170,12 @@ export function InsightsContent() {
       )}
 
       <section>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Recommendations</h2>
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Recommendations</h2>
+          <Link href={ROUTES.RECOMMENDATIONS} className="text-sm text-blue-700 hover:underline">
+            View all →
+          </Link>
+        </div>
         {!data?.recommendations.length ? (
           <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-gray-600">
             Compute insights to get personalized recommendations.
@@ -228,23 +239,10 @@ function BreakdownCard({
   emptyMessage: string
   children: React.ReactNode
 }) {
-  const hasChildren = Array.isArray(children) ? children.length > 0 : !!children
-
   return (
     <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200">
       <h2 className="text-lg font-semibold text-gray-900 mb-4">{title}</h2>
-      {hasChildren ? <div className="space-y-3">{children}</div> : (
-        <p className="text-sm text-gray-600">{emptyMessage}</p>
-      )}
-    </div>
-  )
-}
-
-function BreakdownRow({ label, count }: { label: string; count: number }) {
-  return (
-    <div className="flex items-center justify-between text-sm">
-      <span className="text-gray-700">{label}</span>
-      <span className="font-medium text-gray-900">{count}</span>
+      {children ?? <p className="text-sm text-gray-600">{emptyMessage}</p>}
     </div>
   )
 }

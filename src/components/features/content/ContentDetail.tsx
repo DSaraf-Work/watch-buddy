@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { fetchJson } from '@/lib/utils/fetch-json'
 import { ContentHero } from './ContentHero'
 import { ContentInfo } from './ContentInfo'
+import { AddToWatchlistButton } from '@/components/features/watchlist/AddToWatchlistButton'
 import { CastSection } from './CastSection'
 import { PlatformBadges } from './PlatformBadges'
 import { TrailerEmbed } from './TrailerEmbed'
@@ -184,6 +185,11 @@ export function ContentDetail({ contentId }: ContentDetailProps) {
           {/* Details */}
           <div className="lg:col-span-2 space-y-8">
             <ContentInfo content={content} />
+
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <AddToWatchlistButton contentUuid={content.id} />
+              <p className="mt-2 text-xs text-gray-500">Content ID: {content.id}</p>
+            </div>
 
             {/* Trailer */}
             {content.trailer_url && (

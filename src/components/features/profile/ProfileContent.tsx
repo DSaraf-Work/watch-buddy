@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { authClient } from '@/lib/auth/client'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { ROUTES } from '@/constants/routes'
 import Link from 'next/link'
+import Image from 'next/image'
 import type { AppProfile, AppUser } from '@/types/user'
 import { fetchJson } from '@/lib/utils/fetch-json'
 
@@ -22,6 +23,9 @@ export function ProfileContent({ user, profile }: ProfileContentProps) {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [avatarLoading, setAvatarLoading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || '')
 
   const handleLogout = async () => {
     await authClient.signOut()
@@ -49,6 +53,29 @@ export function ProfileContent({ user, profile }: ProfileContentProps) {
       console.error('Profile update error:', err)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setAvatarLoading(true)
+    setError('')
+
+    try {
+      const formData = new FormData()
+      formData.append('avatar', file)
+      const response = await fetch('/api/profile/avatar', { method: 'POST', body: formData })
+      if (!response.ok) throw new Error('Upload failed')
+      const data = (await response.json()) as { profile: { avatar_url: string | null } }
+      setAvatarUrl(data.profile.avatar_url || '')
+      setSuccess(true)
+      router.refresh()
+    } catch {
+      setError('Failed to upload avatar')
+    } finally {
+      setAvatarLoading(false)
     }
   }
 
@@ -116,6 +143,36 @@ export function ProfileContent({ user, profile }: ProfileContentProps) {
             )}
 
             <div className="space-y-6">
+              <div className="flex items-center gap-4">
+                <div className="relative h-20 w-20 overflow-hidden rounded-full bg-gray-200">
+                  {avatarUrl ? (
+                    <Image src={avatarUrl} alt="Avatar" fill className="object-cover" sizes="80px" />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-2xl text-gray-500">
+                      {profile?.display_name?.[0]?.toUpperCase() || '?'}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    className="hidden"
+                    onChange={handleAvatarUpload}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    isLoading={avatarLoading}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    Upload avatar
+                  </Button>
+                </div>
+              </div>
+
               {/* Email (read-only) */}
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700">

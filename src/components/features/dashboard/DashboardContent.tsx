@@ -1,11 +1,21 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { authClient } from '@/lib/auth/client'
 import { Button } from '@/components/ui/Button'
 import { ROUTES } from '@/constants/routes'
 import Link from 'next/link'
 import type { AppProfile, AppUser } from '@/types/user'
+import { fetchJson } from '@/lib/utils/fetch-json'
+import { formatWatchTime } from '@/lib/dashboard/stats'
+
+interface DashboardStats {
+  watchlist_items: number
+  to_watch: number
+  watched: number
+  total_watch_time: number
+}
 
 interface DashboardContentProps {
   user: AppUser
@@ -14,6 +24,13 @@ interface DashboardContentProps {
 
 export function DashboardContent({ user, profile }: DashboardContentProps) {
   const router = useRouter()
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+
+  useEffect(() => {
+    fetchJson<{ stats: DashboardStats }>('/api/dashboard/stats')
+      .then((data) => setStats(data.stats))
+      .catch(() => setStats(null))
+  }, [])
 
   const handleLogout = async () => {
     await authClient.signOut()
@@ -67,19 +84,25 @@ export function DashboardContent({ user, profile }: DashboardContentProps) {
           {/* Quick Stats */}
           <div className="mb-8 grid gap-6 md:grid-cols-3">
             <div className="rounded-lg bg-white p-6 shadow-lg">
-              <h3 className="text-sm font-medium text-gray-600">Watchlist</h3>
-              <p className="mt-2 text-3xl font-bold text-primary-700">0</p>
-              <p className="mt-1 text-sm text-gray-500">items to watch</p>
+              <h3 className="text-sm font-medium text-gray-600">Watchlist items</h3>
+              <p className="mt-2 text-3xl font-bold text-primary-700">
+                {stats?.watchlist_items ?? '—'}
+              </p>
+              <p className="mt-1 text-sm text-gray-500">saved across lists</p>
             </div>
             <div className="rounded-lg bg-white p-6 shadow-lg">
               <h3 className="text-sm font-medium text-gray-600">Watched</h3>
-              <p className="mt-2 text-3xl font-bold text-primary-700">0</p>
-              <p className="mt-1 text-sm text-gray-500">items completed</p>
+              <p className="mt-2 text-3xl font-bold text-primary-700">
+                {stats?.watched ?? '—'}
+              </p>
+              <p className="mt-1 text-sm text-gray-500">history entries</p>
             </div>
             <div className="rounded-lg bg-white p-6 shadow-lg">
-              <h3 className="text-sm font-medium text-gray-600">Watch Time</h3>
-              <p className="mt-2 text-3xl font-bold text-primary-700">0h</p>
-              <p className="mt-1 text-sm text-gray-500">total hours</p>
+              <h3 className="text-sm font-medium text-gray-600">Watch time</h3>
+              <p className="mt-2 text-3xl font-bold text-primary-700">
+                {stats ? formatWatchTime(stats.total_watch_time) : '—'}
+              </p>
+              <p className="mt-1 text-sm text-gray-500">from tracked titles</p>
             </div>
           </div>
 

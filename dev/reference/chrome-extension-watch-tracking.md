@@ -2,13 +2,13 @@
 
 **Status**: Future / optional — not in current implementation scope  
 **Last Updated**: 2026-08-03  
-**Related**: [Watch History feature](../feature/04-watch-history.md) · [Master implementation plan](../impl/master-implementation-plan.md) (Post-Launch Phase 4)
+**Related**: [Watch History feature](../feature/04-watch-history.md) · [Cloudflare migration plan](../impl/cloudflare-migration-plan.md)
 
 ---
 
 ## Overview
 
-Optional Chrome/Firefox extension to automatically track watch history and viewing time on Netflix, Amazon Prime Video, and Disney+ Hotstar, syncing progress to the Watch-Buddy library via the existing backend (Supabase).
+Optional Chrome/Firefox extension to automatically track watch history and viewing time on Netflix, Amazon Prime Video, and Disney+ Hotstar, syncing progress to the Watch-Buddy library via the existing backend (D1 API + Better Auth session).
 
 **Feasibility**: Yes — 100% feasible. Extensions such as Language Reactor and various Trakt.tv sync plugins use the same approach.
 
@@ -28,13 +28,13 @@ Because Netflix, Prime, and Hotstar use completely different website structures,
 
 1. **Platform-specific scrapers** — separate scripts per service
 2. **Central brain** — background service worker that receives data from scrapers and standardizes it
-3. **Storage** — local (`chrome.storage`) and/or Watch-Buddy backend (Supabase via authenticated API)
+3. **Storage** — local (`chrome.storage`) and/or Watch-Buddy backend (authenticated `/api/history` on Cloudflare Workers)
 
 ```
 ┌─────────────────┐     ┌──────────────────┐     ┌─────────────────────┐
 │ Content Scripts │────▶│ Service Worker   │────▶│ chrome.storage /    │
 │ netflix.js      │     │ (aggregator)     │     │ Watch-Buddy API     │
-│ prime.js        │     │                  │     │ (Supabase)          │
+│ prime.js        │     │                  │     │ (D1 API)            │
 │ hotstar.js      │     └──────────────────┘     └─────────────────────┘
 └─────────────────┘              │
                                  ▼
@@ -91,7 +91,7 @@ Create `background.js` (Manifest V3 service worker):
 
 **Local-only**: Service worker saves standardized JSON to `chrome.storage.local`.
 
-**Watch-Buddy sync** (recommended for cross-device library): authenticated `fetch()` to Watch-Buddy API endpoints (e.g. `POST /api/history/import` or a dedicated extension sync route) backed by Supabase. Reuse existing `watch_history` schema and RLS policies where possible.
+**Watch-Buddy sync** (recommended for cross-device library): authenticated `fetch()` to Watch-Buddy API endpoints (e.g. `POST /api/history` or a dedicated extension sync route) backed by D1. Reuse existing `watch_history` schema and `requireUser()` scoping.
 
 ### Phase 5: Library UI (Popup or Standalone Web App)
 
@@ -127,7 +127,7 @@ Netflix and Prime do not refresh the page when a new episode starts; they use th
 |---------------------|---------------|
 | `POST /api/history` | Add or update watch entries from extension |
 | `POST /api/history/import` | Bulk sync from extension storage |
-| Supabase Auth | Extension OAuth or token-based auth for API calls |
+| Better Auth session | Extension OAuth or token-based auth for API calls |
 | TMDB `content` table | Match scraped titles to cached metadata server-side |
 | `watch_history` schema | Store `watched_at`, `rating`, platform, rewatch flag |
 

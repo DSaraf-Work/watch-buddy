@@ -1,6 +1,8 @@
 # Inspiration Repositories & Stack Migration Reference
 
-**Purpose**: Document the GitHub repos that inspired WatchBuddy's product direction, what each contributes (and does not), and a phased checklist for migrating off the current Vercel + Supabase stack toward a Cloudflare-native architecture.
+**Purpose**: Document the GitHub repos that inspired WatchBuddy's product direction, what each contributes (and does not), and how the stack maps to the **completed** Cloudflare-native architecture (D1, Better Auth, R2, KV).
+
+**Status**: Migration complete — sections 3–7 are historical baseline; see [`docs/architecture.md`](../../docs/architecture.md) for current stack.
 
 **Last Updated**: 2026-08-03
 
