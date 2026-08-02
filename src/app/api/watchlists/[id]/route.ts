@@ -23,12 +23,24 @@ function parseFilters(request: Request): WatchlistItemFilters {
   const order = url.searchParams.get('order')
   const type = url.searchParams.get('type')
   const genre = url.searchParams.get('genre')
+  const priority = url.searchParams.get('priority')
 
   return {
-    sort: sort === 'title' || sort === 'added_at' || sort === 'release_date' ? sort : undefined,
+    sort:
+      sort === 'title' || sort === 'added_at' || sort === 'release_date' || sort === 'priority'
+        ? sort
+        : undefined,
     order: order === 'asc' || order === 'desc' ? order : undefined,
     type: type === 'movie' || type === 'series' || type === 'all' ? type : undefined,
     genre,
+    priority:
+      priority === 'high' ||
+      priority === 'medium' ||
+      priority === 'low' ||
+      priority === 'unset' ||
+      priority === 'all'
+        ? priority
+        : undefined,
   }
 }
 
@@ -60,6 +72,7 @@ export async function GET(request: Request, { params }: RouteParams) {
       id: item.id,
       content_id: item.content_id,
       added_at: item.added_at,
+      priority: item.priority,
       content: item.content
         ? {
             title: item.content.title,

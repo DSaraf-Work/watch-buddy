@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { ROUTES } from '@/constants/routes'
 import { fetchJson } from '@/lib/utils/fetch-json'
+import { WatchlistItemMetaEditor } from './WatchlistItemMetaEditor'
 
 interface WatchlistDetail {
   watchlist: {
@@ -20,6 +21,7 @@ interface WatchlistDetail {
   items: Array<{
     id: string
     content_id: string
+    priority: 'high' | 'medium' | 'low' | null
     notes: string | null
     content: {
       id: string
@@ -49,11 +51,12 @@ export function WatchlistDetailContent({ watchlistId }: { watchlistId: string })
   const [order, setOrder] = useState('desc')
   const [type, setType] = useState('all')
   const [genre, setGenre] = useState('')
+  const [priority, setPriority] = useState('all')
   const [markingId, setMarkingId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     try {
-      const params = new URLSearchParams({ sort, order, type })
+      const params = new URLSearchParams({ sort, order, type, priority })
       if (genre.trim()) params.set('genre', genre.trim())
       const response = await fetchJson<WatchlistDetail>(
         `/api/watchlists/${watchlistId}?${params.toString()}`
@@ -65,7 +68,7 @@ export function WatchlistDetailContent({ watchlistId }: { watchlistId: string })
     } finally {
       setLoading(false)
     }
-  }, [watchlistId, sort, order, type, genre])
+  }, [watchlistId, sort, order, type, genre, priority])
 
   useEffect(() => {
     load()
@@ -152,6 +155,7 @@ export function WatchlistDetailContent({ watchlistId }: { watchlistId: string })
               className="mt-1 block rounded-md border border-gray-300 px-2 py-1.5 text-sm"
             >
               <option value="added_at">Date added</option>
+              <option value="priority">Priority</option>
               <option value="title">Title</option>
               <option value="release_date">Release date</option>
             </select>
@@ -179,6 +183,20 @@ export function WatchlistDetailContent({ watchlistId }: { watchlistId: string })
               <option value="series">Series</option>
             </select>
           </label>
+          <label className="text-sm text-gray-700">
+            Priority
+            <select
+              value={priority}
+              onChange={(e) => setPriority(e.target.value)}
+              className="mt-1 block rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+            >
+              <option value="all">All</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+              <option value="unset">Unset</option>
+            </select>
+          </label>
           <Input
             label="Genre filter"
             value={genre}
@@ -203,7 +221,7 @@ export function WatchlistDetailContent({ watchlistId }: { watchlistId: string })
               return (
                 <article
                   key={item.id}
-                  className="flex items-center gap-4 rounded-lg border border-gray-200 bg-white p-4"
+                  className="flex flex-col gap-3 rounded-lg border border-gray-200 bg-white p-4 sm:flex-row sm:items-start"
                 >
                   <div className="relative h-20 w-14 flex-shrink-0 overflow-hidden rounded bg-gray-200">
                     {content?.poster_path ? (
@@ -224,6 +242,13 @@ export function WatchlistDetailContent({ watchlistId }: { watchlistId: string })
                     ) : (
                       <p className="font-semibold text-gray-900">Unknown title</p>
                     )}
+                    <WatchlistItemMetaEditor
+                      watchlistId={watchlistId}
+                      itemId={item.id}
+                      priority={item.priority}
+                      notes={item.notes}
+                      onSaved={load}
+                    />
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <Button
