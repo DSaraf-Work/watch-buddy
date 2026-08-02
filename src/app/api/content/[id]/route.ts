@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { getContentById } from '@/lib/tmdb/cache'
+import { getContentById, getContentAvailability } from '@/lib/tmdb/cache'
 import { getIndiaWatchProviders } from '@/lib/tmdb/watchProviders'
+import { requireUser, unauthorizedResponse } from '@/lib/auth/server'
 import type { RouteParams } from '@/lib/utils/route-params'
 
 export async function GET(
@@ -9,20 +9,10 @@ export async function GET(
   { params }: RouteParams<{ id: string }>
 ) {
   try {
+    const user = await requireUser()
+    if (!user) return unauthorizedResponse()
+
     const { id } = await params
-    // Verify authentication
-    const supabase = await createClient()
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Parse ID and type from params
-    // Format: {tmdbId}-{type} e.g., "550-movie" or "1399-series"
     const [tmdbIdStr, contentType] = id.split('-')
     const tmdbId = parseInt(tmdbIdStr)
 
@@ -33,36 +23,29 @@ export async function GET(
       )
     }
 
-    // Get content from cache or TMDB
-    const content = await getContentById(tmdbId, contentType as 'movie' | 'series')
+    const contentData = await getContentById(tmdbId, contentType as 'movie' | 'series')
 
-    if (!content) {
+    if (!contentData) {
       return NextResponse.json({ error: 'Content not found' }, { status: 404 })
     }
 
-    // Get OTT availability from database
-    const { data: availability } = await supabase
-      .from('content_availability')
-      .select(`
-        *,
-        platform:ott_platforms(*)
-      `)
-      .eq('content_id', content.id)
+    const availability = contentData.id
+      ? await getContentAvailability(contentData.id)
+      : []
 
-    // Get India watch providers from TMDB
-    const indiaProviders = await getIndiaWatchProviders(tmdbId, contentType as 'movie' | 'series')
+    const indiaProviders = await getIndiaWatchProviders(
+      tmdbId,
+      contentType as 'movie' | 'series'
+    )
 
     return NextResponse.json({
-      ...content,
-      availability: availability || [],
+      ...contentData,
+      release_date: contentData.release_date?.toISOString() ?? null,
+      availability,
       indiaWatchProviders: indiaProviders,
     })
   } catch (error) {
     console.error('Content API error:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch content details' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch content details' }, { status: 500 })
   }
 }
-

@@ -1,36 +1,63 @@
-import { createClient } from '@/lib/supabase/server'
-import { createServiceClient } from '@/lib/supabase/service'
-import type { ContentData, TMDBMovie, TMDBTVShow, TMDBCredits, TMDBVideo } from './types'
-import { getTMDBClient, getYouTubeTrailerUrl } from './client'
+import { and, eq } from 'drizzle-orm'
+import { getDb } from '@/lib/db'
+import { content, contentAvailability, ottPlatforms } from '@/lib/db/schema/app'
+import type { ContentData } from '@/lib/tmdb/types'
+import {
+  contentCacheKey,
+  kvGetJson,
+  kvPutJson,
+  TMDB_CONTENT_TTL,
+} from '@/lib/cache/kv'
+import { getTMDBClient, getYouTubeTrailerUrl } from '@/lib/tmdb/client'
+import type { TMDBMovie, TMDBTVShow, TMDBCredits, TMDBVideo } from '@/lib/tmdb/types'
 
-/**
- * Get content from cache or fetch from TMDB
- */
+function rowToContentData(row: typeof content.$inferSelect): ContentData {
+  return {
+    id: row.id,
+    tmdb_id: row.tmdbId,
+    imdb_id: row.imdbId,
+    title: row.title,
+    original_title: row.originalTitle || row.title,
+    content_type: row.contentType,
+    overview: row.overview || '',
+    poster_path: row.posterPath,
+    backdrop_path: row.backdropPath,
+    release_date: row.releaseDate ? new Date(row.releaseDate) : null,
+    runtime: row.runtime,
+    genres: row.genres || [],
+    cast_data: (row.castData as ContentData['cast_data']) || [],
+    crew_data: (row.crewData as ContentData['crew_data']) || [],
+    ratings: row.ratings || { tmdb: 0 },
+    trailer_url: row.trailerUrl,
+  }
+}
+
 export async function getContentById(
   tmdbId: number,
   contentType: 'movie' | 'series'
 ): Promise<ContentData | null> {
-  const supabase = await createClient()
+  const cacheKey = contentCacheKey(tmdbId, contentType)
+  const cachedKv = await kvGetJson<ContentData>(cacheKey)
+  if (cachedKv?.id) {
+    return cachedKv
+  }
 
-  // Try to get from cache first
-  const { data: cached, error: cacheError } = await supabase
-    .from('content')
-    .select('*')
-    .eq('tmdb_id', tmdbId)
-    .eq('content_type', contentType)
-    .single()
+  const db = await getDb()
+  const [existing] = await db
+    .select()
+    .from(content)
+    .where(and(eq(content.tmdbId, tmdbId), eq(content.contentType, contentType)))
+    .limit(1)
 
-  // If found in cache and not too old (24 hours), return it
-  if (cached && !cacheError) {
-    const cacheAge = Date.now() - new Date(cached.updated_at).getTime()
-    const maxAge = 24 * 60 * 60 * 1000 // 24 hours
-
-    if (cacheAge < maxAge) {
-      return transformCachedContent(cached)
+  if (existing) {
+    const cacheAge = Date.now() - new Date(existing.updatedAt).getTime()
+    if (cacheAge < TMDB_CONTENT_TTL * 1000) {
+      const data = rowToContentData(existing)
+      await kvPutJson(cacheKey, data, TMDB_CONTENT_TTL)
+      return data
     }
   }
 
-  // Fetch from TMDB
   const tmdbClient = getTMDBClient()
   if (!tmdbClient) {
     throw new Error('TMDB client not initialized. Please set TMDB_API_KEY.')
@@ -51,70 +78,112 @@ export async function getContentById(
       contentData = transformTVShowData(tvShow, credits, videos.results)
     }
 
-    // Cache the data and get the ID
-    const cachedId = await cacheContent(contentData)
-    if (cachedId) {
-      contentData.id = cachedId
-    }
+    const id = await upsertContent(contentData)
+    if (id) contentData.id = id
 
+    await kvPutJson(cacheKey, contentData, TMDB_CONTENT_TTL)
     return contentData
   } catch (error) {
     console.error('Error fetching content from TMDB:', error)
-    return null
+    return existing ? rowToContentData(existing) : null
   }
 }
 
-/**
- * Cache content data in Supabase
- * Uses service role client to bypass RLS for caching operations
- */
-async function cacheContent(content: ContentData): Promise<string | null> {
-  const supabase = createServiceClient()
+async function upsertContent(data: ContentData): Promise<string | null> {
+  const db = await getDb()
+  const id = data.id || crypto.randomUUID()
+  const now = new Date()
 
-  const { data, error } = await supabase.from('content').upsert(
-    {
-      tmdb_id: content.tmdb_id,
-      imdb_id: content.imdb_id,
-      title: content.title,
-      original_title: content.original_title,
-      content_type: content.content_type,
-      overview: content.overview,
-      poster_path: content.poster_path,
-      backdrop_path: content.backdrop_path,
-      release_date: content.release_date,
-      runtime: content.runtime,
-      genres: content.genres,
-      cast_data: content.cast_data,
-      crew_data: content.crew_data,
-      ratings: content.ratings,
-      trailer_url: content.trailer_url,
-      updated_at: new Date().toISOString(),
+  await db
+    .insert(content)
+    .values({
+      id,
+      tmdbId: data.tmdb_id,
+      imdbId: data.imdb_id,
+      title: data.title,
+      originalTitle: data.original_title,
+      contentType: data.content_type,
+      overview: data.overview,
+      posterPath: data.poster_path,
+      backdropPath: data.backdrop_path,
+      releaseDate: data.release_date ? data.release_date.toISOString().slice(0, 10) : null,
+      runtime: data.runtime,
+      genres: data.genres,
+      castData: data.cast_data,
+      crewData: data.crew_data,
+      ratings: data.ratings,
+      trailerUrl: data.trailer_url,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .onConflictDoUpdate({
+      target: [content.tmdbId, content.contentType],
+      set: {
+        imdbId: data.imdb_id,
+        title: data.title,
+        originalTitle: data.original_title,
+        overview: data.overview,
+        posterPath: data.poster_path,
+        backdropPath: data.backdrop_path,
+        releaseDate: data.release_date ? data.release_date.toISOString().slice(0, 10) : null,
+        runtime: data.runtime,
+        genres: data.genres,
+        castData: data.cast_data,
+        crewData: data.crew_data,
+        ratings: data.ratings,
+        trailerUrl: data.trailer_url,
+        updatedAt: now,
+      },
+    })
+
+  const [row] = await db
+    .select()
+    .from(content)
+    .where(and(eq(content.tmdbId, data.tmdb_id), eq(content.contentType, data.content_type)))
+    .limit(1)
+
+  return row?.id ?? id
+}
+
+export async function getContentAvailability(contentId: string) {
+  const db = await getDb()
+  const rows = await db
+    .select({
+      id: contentAvailability.id,
+      content_id: contentAvailability.contentId,
+      platform_id: contentAvailability.platformId,
+      available_from: contentAvailability.availableFrom,
+      available_until: contentAvailability.availableUntil,
+      content_url: contentAvailability.contentUrl,
+      platform: ottPlatforms,
+    })
+    .from(contentAvailability)
+    .innerJoin(ottPlatforms, eq(contentAvailability.platformId, ottPlatforms.id))
+    .where(eq(contentAvailability.contentId, contentId))
+
+  return rows.map((row) => ({
+    id: row.id,
+    content_id: row.content_id,
+    platform_id: row.platform_id,
+    available_from: row.available_from,
+    available_until: row.available_until,
+    content_url: row.content_url,
+    platform: {
+      id: row.platform.id,
+      name: row.platform.name,
+      logo_url: row.platform.logoUrl,
+      website_url: row.platform.websiteUrl,
     },
-    {
-      onConflict: 'tmdb_id',
-    }
-  )
-  .select('id')
-  .single()
-
-  if (error) {
-    console.error('Error caching content:', error)
-    return null
-  }
-
-  return data?.id || null
+  }))
 }
 
-/**
- * Transform TMDB movie data to ContentData
- */
 function transformMovieData(
   movie: TMDBMovie,
   credits: TMDBCredits,
   videos: TMDBVideo[]
 ): ContentData {
   return {
-    id: '', // Will be generated by database
+    id: '',
     tmdb_id: movie.id,
     imdb_id: movie.imdb_id || null,
     title: movie.title,
@@ -126,25 +195,20 @@ function transformMovieData(
     release_date: movie.release_date ? new Date(movie.release_date) : null,
     runtime: movie.runtime,
     genres: movie.genres,
-    cast_data: credits.cast.slice(0, 20), // Top 20 cast members
+    cast_data: credits.cast.slice(0, 20),
     crew_data: credits.crew.filter((c) => ['Director', 'Writer', 'Producer'].includes(c.job)),
-    ratings: {
-      tmdb: movie.vote_average,
-    },
+    ratings: { tmdb: movie.vote_average },
     trailer_url: getYouTubeTrailerUrl(videos),
   }
 }
 
-/**
- * Transform TMDB TV show data to ContentData
- */
 function transformTVShowData(
   tvShow: TMDBTVShow,
   credits: TMDBCredits,
   videos: TMDBVideo[]
 ): ContentData {
   return {
-    id: '', // Will be generated by database
+    id: '',
     tmdb_id: tvShow.id,
     imdb_id: null,
     title: tvShow.name,
@@ -156,36 +220,11 @@ function transformTVShowData(
     release_date: tvShow.first_air_date ? new Date(tvShow.first_air_date) : null,
     runtime: tvShow.episode_run_time?.[0] || null,
     genres: tvShow.genres,
-    cast_data: credits.cast.slice(0, 20), // Top 20 cast members
-    crew_data: credits.crew.filter((c) => ['Director', 'Writer', 'Producer', 'Creator'].includes(c.job)),
-    ratings: {
-      tmdb: tvShow.vote_average,
-    },
+    cast_data: credits.cast.slice(0, 20),
+    crew_data: credits.crew.filter((c) =>
+      ['Director', 'Writer', 'Producer', 'Creator'].includes(c.job)
+    ),
+    ratings: { tmdb: tvShow.vote_average },
     trailer_url: getYouTubeTrailerUrl(videos),
   }
 }
-
-/**
- * Transform cached content from database to ContentData
- */
-function transformCachedContent(cached: any): ContentData {
-  return {
-    id: cached.id,
-    tmdb_id: cached.tmdb_id,
-    imdb_id: cached.imdb_id,
-    title: cached.title,
-    original_title: cached.original_title,
-    content_type: cached.content_type,
-    overview: cached.overview,
-    poster_path: cached.poster_path,
-    backdrop_path: cached.backdrop_path,
-    release_date: cached.release_date ? new Date(cached.release_date) : null,
-    runtime: cached.runtime,
-    genres: cached.genres || [],
-    cast_data: cached.cast_data || [],
-    crew_data: cached.crew_data || [],
-    ratings: cached.ratings || { tmdb: 0 },
-    trailer_url: cached.trailer_url,
-  }
-}
-

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { requireUser, unauthorizedResponse } from '@/lib/auth/server'
 import type { RouteParams } from '@/lib/utils/route-params'
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY
@@ -10,17 +10,10 @@ export async function GET(
   { params }: RouteParams<{ id: string }>
 ) {
   try {
+    const user = await requireUser()
+    if (!user) return unauthorizedResponse()
+
     const { id } = await params
-    const supabase = await createClient()
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const personId = parseInt(id)
 
     if (isNaN(personId)) {
@@ -31,10 +24,9 @@ export async function GET(
       return NextResponse.json({ error: 'TMDB API key not configured' }, { status: 500 })
     }
 
-    // Fetch person details
     const personResponse = await fetch(
       `${TMDB_API_BASE_URL}/person/${personId}?api_key=${TMDB_API_KEY}`,
-      { next: { revalidate: 86400 } } // Cache for 24 hours
+      { next: { revalidate: 86400 } }
     )
 
     if (!personResponse.ok) {
@@ -42,6 +34,7 @@ export async function GET(
     }
 
     const personData = await personResponse.json()
+
     const creditsResponse = await fetch(
       `${TMDB_API_BASE_URL}/person/${personId}/combined_credits?api_key=${TMDB_API_KEY}`,
       { next: { revalidate: 86400 } }
@@ -56,36 +49,28 @@ export async function GET(
       crew?: Array<{ vote_count: number; popularity: number; vote_average?: number }>
     }
 
-    // Sort credits by popularity and vote_average
-    const sortedCast = creditsData.cast
-      ?.filter((item: any) => item.vote_count > 10) // Filter out items with few votes
-      .sort((a: any, b: any) => {
-        // Sort by popularity first, then by vote average
-        if (b.popularity !== a.popularity) {
-          return b.popularity - a.popularity
-        }
-        return (b.vote_average || 0) - (a.vote_average || 0)
-      }) || []
+    const sortedCast =
+      creditsData.cast
+        ?.filter((item) => item.vote_count > 10)
+        .sort((a, b) => {
+          if (b.popularity !== a.popularity) return b.popularity - a.popularity
+          return (b.vote_average || 0) - (a.vote_average || 0)
+        }) || []
 
-    const sortedCrew = creditsData.crew
-      ?.filter((item: any) => item.vote_count > 10)
-      .sort((a: any, b: any) => {
-        if (b.popularity !== a.popularity) {
-          return b.popularity - a.popularity
-        }
-        return (b.vote_average || 0) - (a.vote_average || 0)
-      }) || []
+    const sortedCrew =
+      creditsData.crew
+        ?.filter((item) => item.vote_count > 10)
+        .sort((a, b) => {
+          if (b.popularity !== a.popularity) return b.popularity - a.popularity
+          return (b.vote_average || 0) - (a.vote_average || 0)
+        }) || []
 
     return NextResponse.json({
       person: personData,
-      credits: {
-        cast: sortedCast,
-        crew: sortedCrew,
-      },
+      credits: { cast: sortedCast, crew: sortedCrew },
     })
   } catch (error) {
     console.error('Person API error:', error)
     return NextResponse.json({ error: 'Failed to fetch person details' }, { status: 500 })
   }
 }
-

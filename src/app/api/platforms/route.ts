@@ -1,36 +1,28 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { NextResponse } from 'next/server'
+import { asc } from 'drizzle-orm'
+import { getDb } from '@/lib/db'
+import { ottPlatforms } from '@/lib/db/schema/app'
+import { requireUser, unauthorizedResponse } from '@/lib/auth/server'
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    // Verify authentication
-    const supabase = await createClient()
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
+    const user = await requireUser()
+    if (!user) return unauthorizedResponse()
 
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const db = await getDb()
+    const platforms = await db.select().from(ottPlatforms).orderBy(asc(ottPlatforms.name))
 
-    // Get all platforms
-    const { data: platforms, error } = await supabase
-      .from('ott_platforms')
-      .select('*')
-      .order('name')
-
-    if (error) {
-      throw error
-    }
-
-    return NextResponse.json({ platforms })
+    return NextResponse.json({
+      platforms: platforms.map((p) => ({
+        id: p.id,
+        name: p.name,
+        logo_url: p.logoUrl,
+        website_url: p.websiteUrl,
+        created_at: new Date(p.createdAt).toISOString(),
+      })),
+    })
   } catch (error) {
     console.error('Platforms API error:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch platforms' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch platforms' }, { status: 500 })
   }
 }
-
