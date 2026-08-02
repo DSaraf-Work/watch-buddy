@@ -1,190 +1,139 @@
-# Watch-Buddy 🎬
+# Watch-Buddy
 
-Your Personal OTT Companion - Centralize your watch history and watchlists across all major OTT platforms.
-
-**🎉 Phase 1 Complete!** Authentication system is ready for testing. See **`PHASE_1_DELIVERY.md`** to get started.
+Your personal OTT companion — centralize watch history and watchlists across major streaming platforms.
 
 ---
 
-## 🌟 Overview
+## Overview
 
-Watch-Buddy is a cross-platform application that helps you:
-- **Search & Discover**: Find movies and series with detailed metadata, cast info, and OTT availability
-- **Track Your Watchlist**: Create personal and shared watchlists with friends and family
-- **Watch History**: Keep track of everything you've watched across all platforms
-- **Get Insights**: Analyze your viewing habits and get personalized recommendations
+Watch-Buddy helps you:
+
+- **Search & discover** movies and series with TMDB metadata and India OTT availability
+- **Track watchlists** — personal and shared lists
+- **Log watch history** with ratings and reviews
+- **Get insights** — viewing stats and recommendations from your history
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
+
 - Node.js 18+
-- A Supabase account (free tier)
-- A TMDB API account (free)
+- Cloudflare account (D1, KV, R2)
+- Google OAuth credentials
+- TMDB API key
 
 ### Installation
 
-1. **Clone the repository**
 ```bash
 git clone <your-repo-url>
 cd watch-buddy
-```
-
-2. **Install dependencies**
-```bash
 npm install
+cp .dev.vars.example .dev.vars
+# Edit .dev.vars with your secrets (see SETUP.md)
+npm run db:migrate:local
+npm run dev:clean
 ```
 
-3. **Set up environment variables**
-```bash
-cp .env.example .env.local
-```
-Then edit `.env.local` with your Supabase and TMDB credentials.
+Open [http://localhost:3000](http://localhost:3000).
 
-4. **Run the development server**
-```bash
-npm run dev
-```
-
-5. **Open your browser**
-Navigate to [http://localhost:3000](http://localhost:3000)
-
-For detailed setup instructions, see [SETUP.md](SETUP.md)
+For full setup (Google OAuth, Cloudflare bindings, migrations), see [SETUP.md](SETUP.md).
 
 ---
 
-## 📁 Project Structure
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Frontend | Next.js 15, React 19, TypeScript, Tailwind |
+| Hosting | Cloudflare Pages + Workers (OpenNext) |
+| Database | Cloudflare D1 + Drizzle ORM |
+| Auth | Better Auth + Google OAuth |
+| Cache | Cloudflare KV (TMDB hot cache) |
+| Storage | Cloudflare R2 (avatars via `/api/assets`) |
+| External API | TMDB |
+| Testing | Playwright |
+
+---
+
+## Project Structure
 
 ```
 watch-buddy/
-├── src/                    # Source code
-│   ├── app/               # Next.js App Router
-│   ├── components/        # React components
-│   ├── lib/               # Utilities and configurations
-│   ├── types/             # TypeScript types
-│   ├── hooks/             # Custom React hooks
-│   └── constants/         # App constants
-├── supabase/              # Database migrations
-├── tests/                 # Test files
-├── dev/                   # Development documentation
-│   ├── feature/          # Feature requirements
-│   └── impl/             # Implementation plans
-└── docs/                  # Documentation
+├── src/
+│   ├── app/               # Next.js App Router (pages + API routes)
+│   ├── components/        # UI components
+│   ├── lib/               # DB, auth, TMDB, storage utilities
+│   └── constants/         # Routes and app constants
+├── drizzle/migrations/    # D1 schema migrations
+├── tests/e2e/             # Playwright E2E tests
+├── dev/                   # Feature specs and implementation plans
+└── docs/                  # Architecture documentation
 ```
 
 ---
 
-## 🛠️ Tech Stack
+## Documentation
 
-- **Frontend**: Next.js 14+ (App Router), React, TypeScript
-- **Styling**: Tailwind CSS, Radix UI
-- **Database**: PostgreSQL (Supabase)
-- **Authentication**: Supabase Auth
-- **External APIs**: TMDB API
-- **Testing**: Playwright
-- **Deployment**: Vercel
+- [SETUP.md](SETUP.md) — local development setup
+- [AGENTS.md](AGENTS.md) — development guidelines
+- [docs/architecture.md](docs/architecture.md) — architecture reference
+- [dev/impl/cloudflare-migration-plan.md](dev/impl/cloudflare-migration-plan.md) — Cloudflare migration plan
 
 ---
 
-## 📚 Documentation
+## Features
 
-- **[SETUP.md](SETUP.md)** - Detailed setup instructions
-- **[AGENTS.md](AGENTS.md)** - Development guidelines and preferences
-- **[PROJECT_STATUS.md](PROJECT_STATUS.md)** - Current project status
-- **[docs/architecture.md](docs/architecture.md)** - Architecture documentation
-- **[dev/impl/master-implementation-plan.md](dev/impl/master-implementation-plan.md)** - Implementation roadmap
-
----
-
-## 🎯 Features
-
-### Phase 1: Core Features (In Progress)
-- [ ] User authentication (signup, login, logout)
-- [ ] Movie/series search with filters
-- [ ] Content detail pages
-- [ ] Personal watchlist management
-
-### Phase 2: Advanced Features (Planned)
-- [ ] Shared watchlists
-- [ ] Watch history tracking
-- [ ] Ratings and reviews
-
-### Phase 3: Insights & Polish (Planned)
-- [ ] Viewing insights and analytics
-- [ ] Personalized recommendations
-- [ ] Performance optimization
-
-See [dev/impl/master-implementation-plan.md](dev/impl/master-implementation-plan.md) for the complete roadmap.
+- Google OAuth sign-in (Better Auth)
+- TMDB search and content detail pages
+- Personal watchlists and watch history
+- User content status (to watch / watching / watched)
+- Insights dashboard with computed stats and recommendations
+- Profile management with R2 avatar storage
 
 ---
 
-## 🧪 Testing
+## Testing
 
 ```bash
-# Run E2E tests
+npx playwright install chromium
 npm test
-
-# Run tests with UI
-npm run test:ui
 ```
+
+Auth E2E tests use Better Auth session cookies. Playwright starts the dev server with `E2E_TEST_MODE=true` for programmatic test sign-in.
 
 ---
 
-## 📝 Development
+## Development
 
 ```bash
-# Start development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Start production server
-npm start
-
-# Lint code
+npm run dev:clean    # Start dev server on port 3000
+npm run build        # Production build
+npm run preview      # Local Workers preview
+npm run deploy       # Deploy to Cloudflare
 npm run lint
-
-# Format code
-npm run format
+npm run type-check
 ```
 
 ---
 
-## 🚢 Deployment
+## Deployment
 
-This project is configured for deployment on Vercel:
+Deploy to Cloudflare Pages/Workers:
 
-1. Push your code to GitHub
-2. Import the project in Vercel
-3. Add environment variables in Vercel dashboard
-4. Deploy!
+```bash
+npm run deploy
+```
 
-See [vercel.json](vercel.json) for deployment configuration.
+Configure secrets in the Cloudflare dashboard (`BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `TMDB_API_KEY`) and apply remote migrations:
 
----
-
-## 🤝 Contributing
-
-This is a personal project, but contributions are welcome! Please follow the guidelines in [AGENTS.md](AGENTS.md).
+```bash
+npm run db:migrate:remote
+```
 
 ---
 
-## 📄 License
+## License
 
-MIT License - feel free to use this project for your own purposes.
-
----
-
-## 🙏 Acknowledgments
-
-- **TMDB** for providing the movie/series data API
-- **Supabase** for the backend infrastructure
-- **Vercel** for hosting and deployment
-- **Next.js** team for the amazing framework
-
----
-
-**Built with ❤️ using Next.js and Supabase**
-
+MIT

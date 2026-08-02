@@ -1,12 +1,13 @@
 # Watch-Buddy Setup Guide
 
-This guide will help you set up the Watch-Buddy project locally.
+This guide walks through local development for the Cloudflare-native Watch-Buddy stack.
 
 ## Prerequisites
 
-- Node.js 18+ installed
-- npm or yarn package manager
-- A Supabase account (free tier is fine)
+- Node.js 18+
+- npm
+- A Cloudflare account (free tier works)
+- A Google Cloud OAuth client (for sign-in)
 - A TMDB API account (free)
 
 ---
@@ -19,172 +20,121 @@ npm install
 
 ---
 
-## Step 2: Set Up Supabase
+## Step 2: Configure Cloudflare Bindings
 
-### 2.1 Create a Supabase Project
+Watch-Buddy runs on **OpenNext for Cloudflare** with local D1, KV, and R2 bindings via Wrangler.
 
-1. Go to [supabase.com](https://supabase.com)
-2. Sign in or create an account
-3. Click "New Project"
-4. Fill in the project details:
-   - **Name**: watch-buddy
-   - **Database Password**: Choose a strong password (save it!)
-   - **Region**: Choose closest to you
-5. Wait for the project to be created (~2 minutes)
+1. Review `wrangler.jsonc` and confirm your Cloudflare account / resource IDs.
+2. Copy local secrets:
 
-### 2.2 Get Your Supabase Credentials
-
-1. In your Supabase project dashboard, go to **Settings** → **API**
-2. Copy the following values:
-   - **Project URL** (under "Project URL")
-   - **anon/public key** (under "Project API keys")
-   - **service_role key** (under "Project API keys" - keep this secret!)
-
-### 2.3 Run Database Migrations
-
-1. In Supabase dashboard, go to **SQL Editor**
-2. Click "New Query"
-3. Copy the contents of `supabase/migrations/001_initial_schema.sql`
-4. Paste into the SQL editor
-5. Click "Run" to execute the migration
-
-Alternatively, if you have Supabase CLI installed:
 ```bash
-npx supabase db push
+cp .dev.vars.example .dev.vars
 ```
 
----
-
-## Step 3: Set Up TMDB API
-
-### 3.1 Create TMDB Account
-
-1. Go to [themoviedb.org](https://www.themoviedb.org/)
-2. Sign up for a free account
-3. Verify your email
-
-### 3.2 Get API Key
-
-1. Go to **Settings** → **API**
-2. Click "Request an API Key"
-3. Choose "Developer"
-4. Fill in the application details:
-   - **Application Name**: Watch-Buddy
-   - **Application URL**: http://localhost:3000
-   - **Application Summary**: Personal OTT tracking app
-5. Accept the terms and submit
-6. Copy your **API Key (v3 auth)** and **API Read Access Token (v4 auth)**
-
----
-
-## Step 4: Configure Environment Variables
-
-1. Copy the example environment file:
-```bash
-cp .env.example .env.local
-```
-
-2. Open `.env.local` and fill in your credentials:
+3. Fill in `.dev.vars`:
 
 ```env
-# Supabase Configuration
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
-
-# TMDB API
-TMDB_API_KEY=your_tmdb_api_key_here
-TMDB_API_READ_ACCESS_TOKEN=your_tmdb_read_access_token_here
-
-# App Configuration
+BETTER_AUTH_SECRET=generate-a-random-secret-at-least-32-chars
+BETTER_AUTH_URL=http://localhost:3000
+BETTER_AUTH_TRUSTED_ORIGINS=http://localhost:3000
 NEXT_PUBLIC_APP_URL=http://localhost:3000
+GOOGLE_CLIENT_ID=your-google-oauth-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-google-oauth-client-secret
+TMDB_API_KEY=your-tmdb-api-key
+```
+
+See `dev/reference/google-oauth-credentials.md` for Google OAuth redirect URI setup:
+- Local: `http://localhost:3000/api/auth/callback/google`
+
+---
+
+## Step 3: Run Database Migrations
+
+Apply D1 migrations to the local SQLite database:
+
+```bash
+npm run db:migrate:local
+```
+
+Optional: seed OTT platforms
+
+```bash
+npm run db:seed:platforms:local
 ```
 
 ---
 
-## Step 5: Run the Development Server
+## Step 4: Set Up TMDB API
+
+1. Create an account at [themoviedb.org](https://www.themoviedb.org/)
+2. Request a developer API key under **Settings → API**
+3. Add the key to `.dev.vars` as `TMDB_API_KEY`
+
+---
+
+## Step 5: Start the Development Server
+
+Always use port **3000**:
 
 ```bash
+npm run dev:clean
+# or
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000).
 
-You should see the Watch-Buddy landing page! 🎉
+Sign in with Google using an account you control.
 
 ---
 
 ## Step 6: Verify Setup
 
-### 6.1 Test Database Connection
-
-1. Open your browser's developer console
-2. Navigate to http://localhost:3000
-3. Check for any errors in the console
-4. If you see no errors, the database connection is working!
-
-### 6.2 Test Authentication (Once Implemented)
-
-1. Click "Get Started" or "Sign Up"
-2. Create a test account
-3. Verify you can sign in and out
+1. Visit `/api/health` — should return a healthy response
+2. Sign in at `/auth/login` with Google
+3. Visit `/dashboard`, `/search`, `/watchlist`, `/history`, and `/insights`
 
 ---
 
-## Step 7: Install Playwright (Optional - for Testing)
+## Step 7: Playwright E2E Tests (Optional)
 
 ```bash
-npx playwright install
-```
-
-Run tests:
-```bash
+npx playwright install chromium
 npm test
 ```
 
+E2E tests enable `E2E_TEST_MODE=true` automatically (see `playwright.config.ts`) so Playwright can create Better Auth sessions via email/password without completing Google OAuth.
+
 ---
 
-## Common Issues & Troubleshooting
+## Common Issues
 
-### Issue: "Invalid API key" error
+### Port 3000 already in use
 
-**Solution**: Double-check your Supabase credentials in `.env.local`. Make sure there are no extra spaces or quotes.
-
-### Issue: TMDB API not working
-
-**Solution**: 
-- Verify your TMDB API key is correct
-- Check if you've exceeded the rate limit (40 requests per 10 seconds)
-- Make sure your TMDB account is verified
-
-### Issue: Database migration failed
-
-**Solution**:
-- Check if the SQL syntax is correct
-- Verify you have the necessary permissions
-- Try running the migration again
-
-### Issue: Port 3000 already in use
-
-**Solution**:
 ```bash
-# Kill the process using port 3000
-lsof -ti:3000 | xargs kill -9
-
-# Or run on a different port
-PORT=3001 npm run dev
+npm run dev:clean
 ```
 
----
+### Google sign-in fails locally
 
-## Next Steps
+- Confirm `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` in `.dev.vars`
+- Confirm redirect URI: `http://localhost:3000/api/auth/callback/google`
+- Confirm `BETTER_AUTH_URL` matches `http://localhost:3000`
 
-Now that your project is set up, you can:
+### Database errors after pulling new migrations
 
-1. **Review the architecture**: Check `docs/architecture.md`
-2. **Review the implementation plan**: Check `dev/impl/master-implementation-plan.md`
-3. **Start implementing features**: Follow the phase-wise plan
-4. **Read feature requirements**: Check files in `dev/feature/`
+```bash
+npm run db:migrate:local
+```
+
+### Build fails with SQLite locked
+
+Stop other dev servers using the local D1 database, then retry:
+
+```bash
+npm run dev:clean
+npm run build
+```
 
 ---
 
@@ -192,17 +142,23 @@ Now that your project is set up, you can:
 
 ```bash
 # Development
-npm run dev          # Start dev server
-npm run build        # Build for production
-npm run start        # Start production server
+npm run dev:clean       # Free port 3000 and start dev server
+npm run dev             # Start dev server
+npm run build           # Production build
+npm run preview         # OpenNext local Workers preview
 
-# Code Quality
-npm run lint         # Run ESLint
-npm run format       # Format code with Prettier
+# Database
+npm run db:migrate:local
+npm run db:migrate:remote
+npm run db:seed:platforms:local
 
-# Testing
-npm test             # Run Playwright tests
-npm run test:ui      # Run tests with UI
+# Deploy
+npm run deploy
+
+# Quality
+npm run lint
+npm run type-check
+npm test
 ```
 
 ---
@@ -211,31 +167,23 @@ npm run test:ui      # Run tests with UI
 
 ```
 watch-buddy/
-├── src/                    # Source code
-│   ├── app/               # Next.js App Router
-│   ├── components/        # React components
-│   ├── lib/               # Utilities and configs
-│   ├── types/             # TypeScript types
-│   ├── hooks/             # Custom hooks
-│   └── constants/         # Constants
-├── supabase/              # Database migrations
-├── tests/                 # Test files
-├── dev/                   # Development docs
-│   ├── feature/          # Feature requirements
-│   └── impl/             # Implementation plans
-└── docs/                  # Documentation
+├── src/                    # Next.js app source
+├── drizzle/migrations/     # D1 SQL migrations
+├── tests/e2e/              # Playwright tests
+├── dev/                    # Feature + implementation docs
+├── docs/                   # Architecture
+├── wrangler.jsonc          # Cloudflare bindings
+└── .dev.vars               # Local secrets (not committed)
 ```
 
 ---
 
-## Getting Help
+## Further Reading
 
-- **Architecture Questions**: See `docs/architecture.md`
-- **Feature Requirements**: See `dev/feature/`
-- **Implementation Plans**: See `dev/impl/`
-- **Agent Guidelines**: See `AGENTS.md`
+- `docs/architecture.md` — system architecture
+- `AGENTS.md` — agent/developer guidelines
+- `dev/impl/cloudflare-migration-plan.md` — migration history
 
 ---
 
-**Happy Coding! 🚀**
-
+**Happy coding!**
