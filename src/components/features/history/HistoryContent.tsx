@@ -6,6 +6,8 @@ import Image from 'next/image'
 import { ROUTES } from '@/constants/routes'
 import { fetchJson } from '@/lib/utils/fetch-json'
 import { HistoryEntryForm } from './HistoryEntryForm'
+import { HistoryEntryCard } from './HistoryEntryCard'
+import { HistoryImportForm } from './HistoryImportForm'
 
 interface HistoryEntry {
   id: string
@@ -66,6 +68,7 @@ export function HistoryContent() {
       </div>
 
       <HistoryEntryForm onCreated={load} />
+      <HistoryImportForm onImported={load} />
 
       {history.length === 0 ? (
         <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center">
@@ -77,53 +80,56 @@ export function HistoryContent() {
       ) : (
         <div className="space-y-4">
           {history.map((entry) => {
-        const content = entry.content
-        const contentPath = content
-          ? ROUTES.CONTENT(`${content.tmdb_id}-${content.content_type}`)
-          : null
+            const content = entry.content
+            const contentPath = content
+              ? ROUTES.CONTENT(`${content.tmdb_id}-${content.content_type}`)
+              : null
 
-        return (
-          <article
-            key={entry.id}
-            className="flex gap-4 rounded-lg bg-white p-4 shadow-sm border border-gray-200"
-          >
-            <div className="relative h-24 w-16 flex-shrink-0 overflow-hidden rounded-md bg-gray-200">
-              {content?.poster_path ? (
-                <Image
-                  src={`https://image.tmdb.org/t/p/w185${content.poster_path}`}
-                  alt={content.title}
-                  fill
-                  className="object-cover"
-                  sizes="64px"
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center text-xs text-gray-500">
-                  No image
+            return (
+              <article
+                key={entry.id}
+                className="flex flex-col gap-4 rounded-lg bg-white p-4 shadow-sm border border-gray-200 lg:flex-row"
+              >
+                <div className="flex flex-1 gap-4 min-w-0">
+                  <div className="relative h-24 w-16 flex-shrink-0 overflow-hidden rounded-md bg-gray-200">
+                    {content?.poster_path ? (
+                      <Image
+                        src={`https://image.tmdb.org/t/p/w185${content.poster_path}`}
+                        alt={content.title}
+                        fill
+                        className="object-cover"
+                        sizes="64px"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-xs text-gray-500">
+                        No image
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    {contentPath ? (
+                      <Link href={contentPath} className="font-semibold text-gray-900 hover:text-blue-700">
+                        {content?.title}
+                      </Link>
+                    ) : (
+                      <p className="font-semibold text-gray-900">Unknown title</p>
+                    )}
+                    <p className="text-sm text-gray-600 mt-1">
+                      Watched {new Date(entry.watched_at).toLocaleDateString()}
+                      {entry.is_rewatch ? ' · Rewatch' : ''}
+                    </p>
+                    {entry.rating && (
+                      <p className="text-sm text-gray-600 mt-1">Rating: {entry.rating}/5</p>
+                    )}
+                    {entry.review && (
+                      <p className="text-sm text-gray-700 mt-2 line-clamp-2">{entry.review}</p>
+                    )}
+                  </div>
                 </div>
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              {contentPath ? (
-                <Link href={contentPath} className="font-semibold text-gray-900 hover:text-blue-700">
-                  {content?.title}
-                </Link>
-              ) : (
-                <p className="font-semibold text-gray-900">Unknown title</p>
-              )}
-              <p className="text-sm text-gray-600 mt-1">
-                Watched {new Date(entry.watched_at).toLocaleDateString()}
-                {entry.is_rewatch ? ' · Rewatch' : ''}
-              </p>
-              {entry.rating && (
-                <p className="text-sm text-gray-600 mt-1">Rating: {entry.rating}/5</p>
-              )}
-              {entry.review && (
-                <p className="text-sm text-gray-700 mt-2 line-clamp-2">{entry.review}</p>
-              )}
-            </div>
-          </article>
-        )
-      })}
+                <HistoryEntryCard entry={entry} onUpdated={load} onDeleted={load} />
+              </article>
+            )
+          })}
         </div>
       )}
     </div>
