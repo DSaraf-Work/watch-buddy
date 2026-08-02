@@ -1,48 +1,67 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { and, eq } from 'drizzle-orm'
+import { getDb } from '@/lib/db'
+import { content, userContentStatus } from '@/lib/db/schema/app'
 import { getContentById } from '@/lib/tmdb/cache'
+import { requireUser, unauthorizedResponse } from '@/lib/auth/server'
 import type { RouteParams } from '@/lib/utils/route-params'
+
+function serializeStatus(row: typeof userContentStatus.$inferSelect) {
+  return {
+    id: row.id,
+    user_id: row.userId,
+    content_id: row.contentId,
+    status: row.status,
+    rating: row.rating,
+    notes: row.notes,
+    started_at: row.startedAt ? new Date(row.startedAt).toISOString() : null,
+    completed_at: row.completedAt ? new Date(row.completedAt).toISOString() : null,
+    created_at: new Date(row.createdAt).toISOString(),
+    updated_at: new Date(row.updatedAt).toISOString(),
+  }
+}
+
+async function resolveContentId(tmdbId: number, contentType: 'movie' | 'series') {
+  const db = await getDb()
+  const [existing] = await db
+    .select({ id: content.id })
+    .from(content)
+    .where(and(eq(content.tmdbId, tmdbId), eq(content.contentType, contentType)))
+    .limit(1)
+
+  if (existing) return existing.id
+
+  const contentData = await getContentById(tmdbId, contentType)
+  return contentData?.id ?? null
+}
 
 export async function GET(
   request: NextRequest,
   { params }: RouteParams<{ id: string }>
 ) {
   try {
+    const user = await requireUser()
+    if (!user) return unauthorizedResponse()
+
     const { id } = await params
-    const supabase = await createClient()
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Get content ID from database
     const [tmdbIdStr, contentType] = id.split('-')
     const tmdbId = parseInt(tmdbIdStr)
+    const contentId = await resolveContentId(tmdbId, contentType as 'movie' | 'series')
 
-    const { data: content } = await supabase
-      .from('content')
-      .select('id')
-      .eq('tmdb_id', tmdbId)
-      .eq('content_type', contentType)
-      .single()
-
-    if (!content) {
+    if (!contentId) {
       return NextResponse.json({ status: null })
     }
 
-    // Get user's status for this content
-    const { data: status } = await supabase
-      .from('user_content_status')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('content_id', content.id)
-      .single()
+    const db = await getDb()
+    const [status] = await db
+      .select()
+      .from(userContentStatus)
+      .where(
+        and(eq(userContentStatus.userId, user.id), eq(userContentStatus.contentId, contentId))
+      )
+      .limit(1)
 
-    return NextResponse.json({ status })
+    return NextResponse.json({ status: status ? serializeStatus(status) : null })
   } catch (error) {
     console.error('Get status error:', error)
     return NextResponse.json({ error: 'Failed to get status' }, { status: 500 })
@@ -54,17 +73,10 @@ export async function POST(
   { params }: RouteParams<{ id: string }>
 ) {
   try {
+    const user = await requireUser()
+    if (!user) return unauthorizedResponse()
+
     const { id } = await params
-    const supabase = await createClient()
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const body = (await request.json()) as {
       status?: string
       rating?: number
@@ -76,60 +88,55 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
     }
 
-    // Get content ID from database, or cache it if not exists
     const [tmdbIdStr, contentType] = id.split('-')
     const tmdbId = parseInt(tmdbIdStr)
+    const contentId = await resolveContentId(tmdbId, contentType as 'movie' | 'series')
 
-    let { data: content } = await supabase
-      .from('content')
-      .select('id')
-      .eq('tmdb_id', tmdbId)
-      .eq('content_type', contentType)
-      .single()
-
-    // If content not cached, fetch and cache it
-    if (!content) {
-      const contentData = await getContentById(tmdbId, contentType as 'movie' | 'series')
-      if (!contentData || !contentData.id) {
-        return NextResponse.json({ error: 'Content not found' }, { status: 404 })
-      }
-      content = { id: contentData.id }
+    if (!contentId) {
+      return NextResponse.json({ error: 'Content not found' }, { status: 404 })
     }
 
-    // Upsert status
-    const statusData: any = {
-      user_id: user.id,
-      content_id: content.id,
-      status,
+    const now = new Date()
+    const db = await getDb()
+    const recordId = crypto.randomUUID()
+
+    const values = {
+      id: recordId,
+      userId: user.id,
+      contentId,
+      status: status as 'to_watch' | 'watching' | 'watched',
+      rating: rating ?? null,
+      notes: notes ?? null,
+      startedAt: status === 'watching' || status === 'watched' ? now : null,
+      completedAt: status === 'watched' ? now : null,
+      createdAt: now,
+      updatedAt: now,
     }
 
-    if (rating) statusData.rating = rating
-    if (notes) statusData.notes = notes
-
-    // Set timestamps based on status
-    if (status === 'watching' && !statusData.started_at) {
-      statusData.started_at = new Date().toISOString()
-    }
-    if (status === 'watched') {
-      statusData.completed_at = new Date().toISOString()
-      if (!statusData.started_at) {
-        statusData.started_at = new Date().toISOString()
-      }
-    }
-
-    const { data, error } = await supabase
-      .from('user_content_status')
-      .upsert(statusData, {
-        onConflict: 'user_id,content_id',
+    await db
+      .insert(userContentStatus)
+      .values(values)
+      .onConflictDoUpdate({
+        target: [userContentStatus.userId, userContentStatus.contentId],
+        set: {
+          status: values.status,
+          rating: values.rating,
+          notes: values.notes,
+          startedAt: values.startedAt,
+          completedAt: values.completedAt,
+          updatedAt: now,
+        },
       })
+
+    const [saved] = await db
       .select()
-      .single()
+      .from(userContentStatus)
+      .where(
+        and(eq(userContentStatus.userId, user.id), eq(userContentStatus.contentId, contentId))
+      )
+      .limit(1)
 
-    if (error) {
-      throw error
-    }
-
-    return NextResponse.json({ status: data })
+    return NextResponse.json({ status: saved ? serializeStatus(saved) : null })
   } catch (error) {
     console.error('Update status error:', error)
     return NextResponse.json({ error: 'Failed to update status' }, { status: 500 })
@@ -141,41 +148,24 @@ export async function DELETE(
   { params }: RouteParams<{ id: string }>
 ) {
   try {
+    const user = await requireUser()
+    if (!user) return unauthorizedResponse()
+
     const { id } = await params
-    const supabase = await createClient()
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Get content ID from database
     const [tmdbIdStr, contentType] = id.split('-')
     const tmdbId = parseInt(tmdbIdStr)
+    const contentId = await resolveContentId(tmdbId, contentType as 'movie' | 'series')
 
-    const { data: content } = await supabase
-      .from('content')
-      .select('id')
-      .eq('tmdb_id', tmdbId)
-      .eq('content_type', contentType)
-      .single()
-
-    if (!content) {
+    if (!contentId) {
       return NextResponse.json({ error: 'Content not found' }, { status: 404 })
     }
 
-    const { error } = await supabase
-      .from('user_content_status')
-      .delete()
-      .eq('user_id', user.id)
-      .eq('content_id', content.id)
-
-    if (error) {
-      throw error
-    }
+    const db = await getDb()
+    await db
+      .delete(userContentStatus)
+      .where(
+        and(eq(userContentStatus.userId, user.id), eq(userContentStatus.contentId, contentId))
+      )
 
     return NextResponse.json({ success: true })
   } catch (error) {
@@ -183,4 +173,3 @@ export async function DELETE(
     return NextResponse.json({ error: 'Failed to delete status' }, { status: 500 })
   }
 }
-

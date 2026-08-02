@@ -1,30 +1,37 @@
-import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { and, asc, eq } from 'drizzle-orm'
+import { getDb } from '@/lib/db'
+import { userStatusPreferences } from '@/lib/db/schema/app'
+import { requireUser, unauthorizedResponse } from '@/lib/auth/server'
+
+function serializePreference(row: typeof userStatusPreferences.$inferSelect) {
+  return {
+    id: row.id,
+    user_id: row.userId,
+    status_key: row.statusKey,
+    custom_label: row.customLabel,
+    icon: row.icon,
+    color: row.color,
+    created_at: new Date(row.createdAt).toISOString(),
+    updated_at: new Date(row.updatedAt).toISOString(),
+  }
+}
 
 export async function GET() {
   try {
-    const supabase = await createClient()
+    const user = await requireUser()
+    if (!user) return unauthorizedResponse()
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const db = await getDb()
+    const preferences = await db
+      .select()
+      .from(userStatusPreferences)
+      .where(eq(userStatusPreferences.userId, user.id))
+      .orderBy(asc(userStatusPreferences.statusKey))
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const { data: preferences, error } = await supabase
-      .from('user_status_preferences')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('status_key')
-
-    if (error) {
-      console.error('Error fetching status preferences:', error)
-      return NextResponse.json({ error: 'Failed to fetch preferences' }, { status: 500 })
-    }
-
-    return NextResponse.json({ preferences })
+    return NextResponse.json({
+      preferences: preferences.map(serializePreference),
+    })
   } catch (error) {
     console.error('Error in GET /api/user/status-preferences:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -33,15 +40,8 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient()
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const user = await requireUser()
+    if (!user) return unauthorizedResponse()
 
     const body = (await request.json()) as {
       status_key?: string
@@ -51,7 +51,6 @@ export async function POST(request: Request) {
     }
     const { status_key, custom_label, icon, color } = body
 
-    // Validate input
     if (!status_key || !custom_label || !icon || !color) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
@@ -64,30 +63,46 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Label cannot be empty' }, { status: 400 })
     }
 
-    // Upsert preference
-    const { data: preference, error } = await supabase
-      .from('user_status_preferences')
-      .upsert(
-        {
-          user_id: user.id,
-          status_key,
-          custom_label: custom_label.trim(),
+    const now = new Date()
+    const db = await getDb()
+    const id = crypto.randomUUID()
+
+    await db
+      .insert(userStatusPreferences)
+      .values({
+        id,
+        userId: user.id,
+        statusKey: status_key as 'to_watch' | 'watching' | 'watched',
+        customLabel: custom_label.trim(),
+        icon,
+        color,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .onConflictDoUpdate({
+        target: [userStatusPreferences.userId, userStatusPreferences.statusKey],
+        set: {
+          customLabel: custom_label.trim(),
           icon,
           color,
+          updatedAt: now,
         },
-        {
-          onConflict: 'user_id,status_key',
-        }
-      )
+      })
+
+    const [preference] = await db
       .select()
-      .single()
+      .from(userStatusPreferences)
+      .where(
+        and(
+          eq(userStatusPreferences.userId, user.id),
+          eq(userStatusPreferences.statusKey, status_key as 'to_watch' | 'watching' | 'watched')
+        )
+      )
+      .limit(1)
 
-    if (error) {
-      console.error('Error saving status preference:', error)
-      return NextResponse.json({ error: 'Failed to save preference' }, { status: 500 })
-    }
-
-    return NextResponse.json({ preference })
+    return NextResponse.json({
+      preference: preference ? serializePreference(preference) : null,
+    })
   } catch (error) {
     console.error('Error in POST /api/user/status-preferences:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -96,26 +111,11 @@ export async function POST(request: Request) {
 
 export async function DELETE() {
   try {
-    const supabase = await createClient()
+    const user = await requireUser()
+    if (!user) return unauthorizedResponse()
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Delete all preferences for the user (reset to defaults)
-    const { error } = await supabase
-      .from('user_status_preferences')
-      .delete()
-      .eq('user_id', user.id)
-
-    if (error) {
-      console.error('Error deleting status preferences:', error)
-      return NextResponse.json({ error: 'Failed to delete preferences' }, { status: 500 })
-    }
+    const db = await getDb()
+    await db.delete(userStatusPreferences).where(eq(userStatusPreferences.userId, user.id))
 
     return NextResponse.json({ success: true })
   } catch (error) {
@@ -123,4 +123,3 @@ export async function DELETE() {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
-
