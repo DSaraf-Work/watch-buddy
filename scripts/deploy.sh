@@ -29,6 +29,9 @@ else
 fi
 
 echo "Building OpenNext..."
+# NEXT_PUBLIC_* vars are inlined at build time; wrangler.jsonc vars alone do not update client bundles.
+export NEXT_PUBLIC_APP_URL="${NEXT_PUBLIC_APP_URL:-https://watch-buddy.geass.workers.dev}"
+echo "Using NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL for client build"
 opennextjs-cloudflare build
 
 echo "Deploying to Cloudflare..."
