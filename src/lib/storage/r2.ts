@@ -1,4 +1,5 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare'
+import { getR2Object } from '@/lib/storage/assets'
 
 export async function uploadAvatar(
   userId: string,
@@ -14,9 +15,7 @@ export async function uploadAvatar(
 }
 
 export async function getAvatarUrl(key: string): Promise<string | null> {
-  const { env } = await getCloudflareContext({ async: true })
-  const object = await env.R2.head(key)
+  const object = await getR2Object(key)
   if (!object) return null
-  // Serve via a future /api/assets route or public R2 custom domain
-  return `/api/assets/${encodeURIComponent(key)}`
+  return `/api/assets/${key.split('/').map(encodeURIComponent).join('/')}`
 }
