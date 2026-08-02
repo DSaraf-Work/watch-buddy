@@ -26,12 +26,12 @@
 |-------|-------|--------|--------|
 | 0 | Cloudflare foundation (OpenNext, wrangler, Drizzle scaffold) | Complete | `95edffb` |
 | 1 | Auth + Profiles (Better Auth, middleware, auth pages) | Complete | `ee3324d` |
-| 2 | TMDB + Search + Content Detail (D1 schema, KV cache, APIs) | Complete | pending |
-| 3 | User Content Status + Preferences | Complete | pending |
-| 4 | Watchlist Management (schema + APIs) | Complete | pending |
-| 5 | Watch History (schema + APIs) | Complete | pending |
-| 6 | Insights schema stub + architecture docs | Complete | pending |
-| 7 | Cleanup (remove Supabase, R2 helpers, polish) | Complete | pending |
+| 2 | TMDB + Search + Content Detail (D1 schema, KV cache, APIs) | Complete | `94c6334` |
+| 3 | User Content Status + Preferences | Complete | `c50b77d` |
+| 4 | Watchlist Management (schema + APIs) | Complete | `87b5ed0` |
+| 5 | Watch History (schema + APIs) | Complete | `4dcce52` |
+| 6 | Insights schema stub + architecture docs | Complete | `d5bc96b` |
+| 7 | Cleanup (remove Supabase, R2 helpers, polish) | Complete | `1be9791` |
 
 ---
 
