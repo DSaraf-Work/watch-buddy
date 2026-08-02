@@ -10,10 +10,10 @@
 | Statistics page | Done |
 | Edit/delete entries | Done — API + card UI |
 | CSV import | Done — `POST /api/history/import` |
-| Filters/sort/search in UI | Not implemented |
+| Filters/sort/search in UI | Done — query params on `GET /api/history` + filter bar |
 
 ## API Routes
-- `POST /api/history/import` — multipart CSV (`content_id`, `watched_at`, optional columns)
+- `GET /api/history?q=&type=&platform_id=&sort=&order=&min_rating=&rewatch=&from=&to=` — filtered list
 
 ## UI
 - Edit/delete controls on each history card

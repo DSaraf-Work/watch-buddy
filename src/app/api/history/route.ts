@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { desc, eq } from 'drizzle-orm'
 import { getDb } from '@/lib/db'
 import { content, watchHistory } from '@/lib/db/schema/app'
+import { filterAndSortHistory, parseHistoryFilters } from '@/lib/history/filter'
 import { requireUser, unauthorizedResponse } from '@/lib/auth/server'
 
 function serializeHistory(
@@ -32,10 +33,11 @@ function serializeHistory(
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const user = await requireUser()
   if (!user) return unauthorizedResponse()
 
+  const filters = parseHistoryFilters(new URL(request.url))
   const db = await getDb()
   const rows = await db
     .select({ history: watchHistory, contentRow: content })
@@ -44,8 +46,31 @@ export async function GET() {
     .where(eq(watchHistory.userId, user.id))
     .orderBy(desc(watchHistory.watchedAt))
 
+  const serialized = rows.map((row) => serializeHistory(row.history, row.contentRow))
+  const filtered = filterAndSortHistory(
+    serialized.map((row) => ({
+      id: row.id,
+      watched_at: row.watched_at,
+      rating: row.rating,
+      review: row.review,
+      is_rewatch: row.is_rewatch,
+      platform_id: row.platform_id,
+      content: row.content
+        ? { title: row.content.title, content_type: row.content.content_type }
+        : null,
+    })),
+    filters
+  )
+
+  const filteredIds = new Set(filtered.map((row) => row.id))
+  const history = serialized
+    .filter((row) => filteredIds.has(row.id))
+    .sort((a, b) => filtered.findIndex((f) => f.id === a.id) - filtered.findIndex((f) => f.id === b.id))
+
   return NextResponse.json({
-    history: rows.map((row) => serializeHistory(row.history, row.contentRow)),
+    history,
+    total: serialized.length,
+    filters,
   })
 }
 

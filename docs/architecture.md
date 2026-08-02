@@ -69,12 +69,12 @@ Supabase RLS is replaced by **application-level authorization**:
 | `/api/watchlists` | Watchlist list/create |
 | `/api/watchlists/[id]` | Watchlist detail/update/delete |
 | `/api/watchlists/[id]/items` | Add watchlist item |
-| `/api/watchlists/[id]/items/[itemId]` | Remove watchlist item |
+| `/api/watchlists/[id]/items/[itemId]` | Update priority/notes or remove item |
 | `/api/watchlists/[id]/items/[itemId]/mark-watched` | Mark item watched + add history |
 | `/api/watchlists/[id]/members` | Invite shared member |
 | `/api/watchlists/[id]/members/[userId]` | Remove shared member |
 | `/api/watchlists/shared-items` | Overlap items wishlisted by multiple users |
-| `/api/history` | Watch history list/create |
+| `/api/history` | Watch history list (filterable) / create |
 | `/api/history/[id]` | Update/delete history entry |
 | `/api/history/stats` | History statistics |
 | `/api/history/import` | CSV import |
