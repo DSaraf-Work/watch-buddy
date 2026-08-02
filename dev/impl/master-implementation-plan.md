@@ -356,9 +356,10 @@
 
 ## Post-Launch (Future Phases)
 
-### Phase 4: Browser Extension
+### Phase 4: Browser Extension (Optional)
 - Chrome/Firefox extension for automatic tracking
-- Import watch history from OTT platforms
+- Import watch history from OTT platforms (Netflix, Prime, Hotstar)
+- **Detailed plan**: [Chrome extension watch tracking](../reference/chrome-extension-watch-tracking.md)
 
 ### Phase 5: Mobile Apps
 - React Native apps for iOS/Android

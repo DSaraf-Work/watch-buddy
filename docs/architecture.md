@@ -352,6 +352,11 @@ const { data: { user } } = await supabase.auth.getUser()
 - Invalidate on user request
 - Reduce API calls by 80%+
 
+### 8.3 Browser Extension (Optional, Future)
+Optional Chrome/Firefox extension for automatic OTT watch tracking (Netflix, Prime, Hotstar). Not part of the current web app; syncs to Watch-Buddy via API and Supabase.
+
+**Reference**: [`dev/reference/chrome-extension-watch-tracking.md`](../dev/reference/chrome-extension-watch-tracking.md)
+
 ---
 
 ## 9. Security

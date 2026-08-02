@@ -5,7 +5,7 @@
 
 ### Core Features
 - Detailed movie/series metadata and search
-- Aggregated watch activity (manual, imported, or via extension)
+- Aggregated watch activity (manual, imported, or via extension — see `dev/reference/chrome-extension-watch-tracking.md`)
 - Track planned and finished content
 - Multi-user shared wishlists with sync capability
 - User authentication (unique email + password)

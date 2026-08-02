@@ -286,4 +286,5 @@ Record decisions here as migration planning progresses.
 **Related docs:**
 - [`docs/architecture.md`](../../docs/architecture.md) — current system architecture
 - [`dev/impl/master-implementation-plan.md`](../impl/master-implementation-plan.md) — feature roadmap
+- [`dev/reference/chrome-extension-watch-tracking.md`](./chrome-extension-watch-tracking.md) — optional OTT browser extension plan
 - [`AGENTS.md`](../../AGENTS.md) — development guidelines

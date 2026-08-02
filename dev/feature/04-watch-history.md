@@ -28,7 +28,7 @@ Track and display user's watch history across all OTT platforms.
    - Statistics (total watched, by platform, by genre)
 
 3. **Import (Future)**
-   - Browser extension integration
+   - Browser extension integration — see [Chrome extension watch tracking (optional)](../reference/chrome-extension-watch-tracking.md)
    - CSV import
    - Automatic sync from OTT platforms
 
