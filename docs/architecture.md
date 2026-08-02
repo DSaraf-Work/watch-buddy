@@ -40,7 +40,7 @@ Supabase RLS is replaced by **application-level authorization**:
 - `user_content_status`, `user_status_preferences`
 - `watchlists`, `watchlist_members`, `watchlist_items`
 - `watch_history`, `watch_sessions`
-- `user_preferences`, `recommendations` (v2 insights stub)
+- `user_preferences`, `recommendations` (insights + recommendations)
 
 ---
 
@@ -66,7 +66,8 @@ Supabase RLS is replaced by **application-level authorization**:
 | `/api/user/status-preferences` | Status label customization |
 | `/api/watchlists` | Watchlist CRUD (list/create) |
 | `/api/history` | Watch history (list/create) |
-| `/api/insights` | Preferences + recommendations stub |
+| `/api/insights` | GET preferences/recommendations; POST compute insights |
+| `/api/assets/[[...key]]` | Serve public R2 assets (avatars) |
 
 ---
 

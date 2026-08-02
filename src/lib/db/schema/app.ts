@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { sqliteTable, text, integer, index, uniqueIndex } from 'drizzle-orm/sqlite-core'
+import { sqliteTable, text, integer, real, index, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import { users } from './auth'
 
 export const content = sqliteTable(
@@ -239,6 +239,13 @@ export const watchSessions = sqliteTable(
   (table) => [index('idx_watch_sessions_history').on(table.historyId)]
 )
 
+export type InsightsData = {
+  monthly_activity: Array<{ month: string; count: number }>
+  genre_breakdown: Array<{ genre: string; count: number }>
+  platform_breakdown: Array<{ platform_id: string; platform_name: string; count: number }>
+  content_type_breakdown: { movies: number; series: number }
+}
+
 export const userPreferences = sqliteTable('user_preferences', {
   id: text('id').primaryKey(),
   userId: text('user_id')
@@ -247,6 +254,10 @@ export const userPreferences = sqliteTable('user_preferences', {
     .unique(),
   favoriteGenres: text('favorite_genres', { mode: 'json' }).$type<string[]>(),
   favoritePlatforms: text('favorite_platforms', { mode: 'json' }).$type<string[]>(),
+  avgRating: real('avg_rating'),
+  totalWatched: integer('total_watched').default(0).notNull(),
+  totalWatchTime: integer('total_watch_time').default(0).notNull(),
+  insightsData: text('insights_data', { mode: 'json' }).$type<InsightsData>(),
   computedAt: integer('computed_at', { mode: 'timestamp_ms' }),
   createdAt: integer('created_at', { mode: 'timestamp_ms' })
     .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
@@ -274,6 +285,7 @@ export const recommendations = sqliteTable(
       .notNull(),
   },
   (table) => [
+    uniqueIndex('recommendations_user_content_unique').on(table.userId, table.contentId),
     index('idx_recommendations_user').on(table.userId),
     index('idx_recommendations_score').on(table.score),
   ]
