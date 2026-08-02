@@ -4,7 +4,12 @@ import { useCallback, useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
-import { BarChart } from '@/components/ui/BarChart'
+import {
+  ContentMixPieChart,
+  GenreBarChart,
+  MonthlyTrendChart,
+  PlatformBarChart,
+} from '@/components/charts/InsightsCharts'
 import { ROUTES } from '@/constants/routes'
 import { fetchJson } from '@/lib/utils/fetch-json'
 import type { InsightsData } from '@/lib/db/schema/app'
@@ -31,6 +36,10 @@ interface InsightsResponse {
       poster_path: string | null
     }
   }>
+  job?: {
+    status: 'idle' | 'pending' | 'running' | 'completed' | 'failed'
+    error?: string
+  }
 }
 
 function formatWatchTime(minutes: number): string {
@@ -51,8 +60,10 @@ export function InsightsContent() {
       const response = await fetchJson<InsightsResponse>('/api/insights')
       setData(response)
       setError(null)
+      return response
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load insights')
+      return null
     } finally {
       setLoading(false)
     }
@@ -62,12 +73,36 @@ export function InsightsContent() {
     loadInsights()
   }, [loadInsights])
 
-  const handleCompute = async () => {
+  const pollJob = useCallback(async () => {
+    for (let i = 0; i < 30; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+      const status = await fetchJson<{ job: InsightsResponse['job'] }>('/api/insights/compute-status')
+      if (status.job?.status === 'completed') {
+        await loadInsights()
+        return
+      }
+      if (status.job?.status === 'failed') {
+        throw new Error(status.job.error ?? 'Background compute failed')
+      }
+    }
+    throw new Error('Insights compute timed out')
+  }, [loadInsights])
+
+  const handleCompute = async (asyncMode = true) => {
     setComputing(true)
     setError(null)
     try {
-      await fetchJson('/api/insights', { method: 'POST' })
-      await loadInsights()
+      if (asyncMode) {
+        await fetchJson('/api/insights', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ async: true }),
+        })
+        await pollJob()
+      } else {
+        await fetchJson('/api/insights', { method: 'POST' })
+        await loadInsights()
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to compute insights')
     } finally {
@@ -81,6 +116,7 @@ export function InsightsContent() {
 
   const prefs = data?.preferences
   const insights = prefs?.insights_data
+  const jobRunning = data?.job?.status === 'pending' || data?.job?.status === 'running'
 
   return (
     <div className="space-y-8">
@@ -95,10 +131,15 @@ export function InsightsContent() {
               No insights computed yet. Generate them from your watch history.
             </p>
           )}
+          {jobRunning && (
+            <p className="text-sm text-blue-700 mt-1">Computing insights in the background…</p>
+          )}
         </div>
-        <Button onClick={handleCompute} isLoading={computing}>
-          {prefs ? 'Refresh Insights' : 'Compute Insights'}
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => handleCompute(true)} isLoading={computing || jobRunning}>
+            {prefs ? 'Refresh Insights' : 'Compute Insights'}
+          </Button>
+        </div>
       </div>
 
       {error && (
@@ -122,50 +163,39 @@ export function InsightsContent() {
 
       {insights && (
         <div className="grid gap-6 lg:grid-cols-2">
-          <BreakdownCard title="Genre Breakdown" emptyMessage="No genre data yet.">
-            <BarChart
-              items={(insights.genre_breakdown.slice(0, 8) ?? []).map((item) => ({
+          <BreakdownCard title="Genre Breakdown">
+            <GenreBarChart
+              items={insights.genre_breakdown.slice(0, 8).map((item) => ({
                 label: item.genre,
                 value: item.count,
               }))}
             />
           </BreakdownCard>
 
-          <BreakdownCard title="Platform Usage" emptyMessage="No platform data yet.">
-            <BarChart
-              items={(insights.platform_breakdown.slice(0, 8) ?? []).map((item) => ({
+          <BreakdownCard title="Platform Usage">
+            <PlatformBarChart
+              items={insights.platform_breakdown.slice(0, 8).map((item) => ({
                 label: item.platform_name,
                 value: item.count,
               }))}
             />
           </BreakdownCard>
 
-          <BreakdownCard title="Monthly Activity" emptyMessage="No viewing activity yet.">
-            <BarChart
-              items={(insights.monthly_activity.slice(-6) ?? []).map((item) => ({
+          <BreakdownCard title="Monthly Activity">
+            <MonthlyTrendChart
+              items={insights.monthly_activity.slice(-12).map((item) => ({
                 label: item.month,
                 value: item.count,
               }))}
             />
           </BreakdownCard>
 
-          <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Content Mix</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="rounded-md bg-blue-50 p-4 text-center">
-                <p className="text-2xl font-bold text-blue-800">
-                  {insights.content_type_breakdown.movies}
-                </p>
-                <p className="text-sm text-blue-700">Movies</p>
-              </div>
-              <div className="rounded-md bg-purple-50 p-4 text-center">
-                <p className="text-2xl font-bold text-purple-800">
-                  {insights.content_type_breakdown.series}
-                </p>
-                <p className="text-sm text-purple-700">Series</p>
-              </div>
-            </div>
-          </div>
+          <BreakdownCard title="Content Mix">
+            <ContentMixPieChart
+              movies={insights.content_type_breakdown.movies}
+              series={insights.content_type_breakdown.series}
+            />
+          </BreakdownCard>
         </div>
       )}
 
@@ -230,19 +260,11 @@ function StatCard({ label, value }: { label: string; value: string }) {
   )
 }
 
-function BreakdownCard({
-  title,
-  emptyMessage,
-  children,
-}: {
-  title: string
-  emptyMessage: string
-  children: React.ReactNode
-}) {
+function BreakdownCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200">
       <h2 className="text-lg font-semibold text-gray-900 mb-4">{title}</h2>
-      {children ?? <p className="text-sm text-gray-600">{emptyMessage}</p>}
+      {children}
     </div>
   )
 }
