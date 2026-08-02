@@ -1,37 +1,20 @@
 # Feature: Watch History Tracking
 
-**Stack**: D1 + Drizzle · Better Auth · Cloudflare Workers  
-**Schema**: `src/lib/db/schema/app.ts` (`watch_history`)
-
-## Overview
-Track and display user's watch history across OTT platforms.
+**Stack**: D1 + Drizzle · Better Auth · Cloudflare Workers
 
 ## Implementation status
 
 | Area | Status |
 |------|--------|
-| List history | Done — `GET /api/history` |
-| Manual entry (date, rating, review, rewatch) | Done — `POST /api/history` + `HistoryEntryForm` |
-| Edit/delete entries | API done — `PUT/DELETE /api/history/[id]`; no edit UI yet |
-| Statistics page | Done — `GET /api/history/stats`, `/history/stats` |
+| List + manual entry | Done |
+| Statistics page | Done |
+| Edit/delete entries | Done — API + card UI |
+| CSV import | Done — `POST /api/history/import` |
 | Filters/sort/search in UI | Not implemented |
-| CSV/import API | Not implemented |
-| Chrome extension sync | Future — see `dev/reference/chrome-extension-watch-tracking.md` |
 
-Authorization: `requireUser()` + `user_id` scoping on all queries.
+## API Routes
+- `POST /api/history/import` — multipart CSV (`content_id`, `watched_at`, optional columns)
 
-## API Routes (implemented)
-- `GET /api/history` — paginated history
-- `POST /api/history` — add entry
-- `PUT /api/history/[id]` — update entry
-- `DELETE /api/history/[id]` — delete entry
-- `GET /api/history/stats` — aggregates (totals, by platform/genre/month)
-
-## UI Routes
-- `/history` — history list + manual entry form
-- `/history/stats` — statistics dashboard
-
-## Future
-- Edit/delete controls on history cards
-- `POST /api/history/import`
-- Extension-based automatic sync
+## UI
+- Edit/delete controls on each history card
+- CSV import section on `/history`

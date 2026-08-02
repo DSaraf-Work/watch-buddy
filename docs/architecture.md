@@ -70,13 +70,20 @@ Supabase RLS is replaced by **application-level authorization**:
 | `/api/watchlists/[id]` | Watchlist detail/update/delete |
 | `/api/watchlists/[id]/items` | Add watchlist item |
 | `/api/watchlists/[id]/items/[itemId]` | Remove watchlist item |
+| `/api/watchlists/[id]/items/[itemId]/mark-watched` | Mark item watched + add history |
 | `/api/watchlists/[id]/members` | Invite shared member |
 | `/api/watchlists/[id]/members/[userId]` | Remove shared member |
+| `/api/watchlists/shared-items` | Overlap items wishlisted by multiple users |
 | `/api/history` | Watch history list/create |
 | `/api/history/[id]` | Update/delete history entry |
 | `/api/history/stats` | History statistics |
-| `/api/insights` | GET preferences/recommendations; POST compute |
+| `/api/history/import` | CSV import |
+| `/api/insights` | GET preferences/recommendations; POST compute (sync or async) |
 | `/api/insights/stats` | Insights/history stats alias |
+| `/api/insights/trends` | Monthly viewing trends |
+| `/api/insights/genres` | Genre breakdown |
+| `/api/insights/platforms` | Platform usage breakdown |
+| `/api/insights/compute-status` | Async insights job status |
 | `/api/assets/[[...key]]` | Serve public R2 assets (avatars) |
 
 ---
