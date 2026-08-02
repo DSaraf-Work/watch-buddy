@@ -106,14 +106,6 @@ jobs:
           echo "Using D1 database: $ACTUAL_UUID"
           sed -i "s/\"database_id\": \"[^\"]*\"/\"database_id\": \"$ACTUAL_UUID\"/" wrangler.jsonc
 
-      - name: Apply D1 migrations (remote)
-        if: env.SKIP_MIGRATIONS != 'true'
-        run: npm run db:migrate:remote
-
-      - name: Seed OTT platforms (remote)
-        if: env.SKIP_MIGRATIONS != 'true' && env.SKIP_SEED != 'true'
-        run: npm run db:seed:platforms:remote
-
       - name: Ensure Cloudflare KV namespace exists
         run: |
           npx wrangler kv namespace create "watch-buddy-kv" 2>&1 || true
@@ -129,5 +121,10 @@ jobs:
         run: |
           npx wrangler r2 bucket create watch-buddy-assets 2>&1 || true
 
-      - name: Deploy to Cloudflare
-        run: time npm run deploy
+      - name: Migrate, build, and deploy
+        env:
+          SKIP_MIGRATIONS: ${{ env.SKIP_MIGRATIONS }}
+          SKIP_SEED: ${{ env.SKIP_SEED }}
+        run: |
+          chmod +x scripts/deploy.sh
+          time ./scripts/deploy.sh

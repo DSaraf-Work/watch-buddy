@@ -7,7 +7,7 @@
     "dev:clean": "./scripts/start-dev.sh",
     "build": "next build",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy": "opennextjs-cloudflare build && ./scripts/wrangler-personal.sh deploy",
+    "deploy": "./scripts/deploy.sh",
     "cf-typegen": "./scripts/wrangler-personal.sh types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate:local": "./scripts/wrangler-personal.sh d1 migrations apply DATABASE --local",

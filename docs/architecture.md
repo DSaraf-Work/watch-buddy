@@ -75,7 +75,7 @@ Supabase RLS is replaced by **application-level authorization**:
 
 ```bash
 npm run preview   # local Workers runtime
-npm run deploy    # Cloudflare Pages
+npm run deploy    # apply remote D1 migrations, seed platforms, build, deploy
 ```
 
 ### Required secrets (user configures)
