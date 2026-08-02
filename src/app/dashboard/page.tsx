@@ -27,9 +27,11 @@ export default async function DashboardPage() {
   if (!user) redirect(ROUTES.AUTH.LOGIN)
 
   const db = await getDb()
-  const profile = await db.query.profiles.findFirst({
-    where: eq(profiles.id, user.id),
-  })
+  const [profile] = await db
+    .select()
+    .from(profiles)
+    .where(eq(profiles.id, user.id))
+    .limit(1)
 
   return <DashboardContent user={user} profile={profile ? serializeProfile(profile) : null} />
 }

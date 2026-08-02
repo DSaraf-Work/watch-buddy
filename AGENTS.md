@@ -12,9 +12,13 @@
 - [v2] Personalized insights and recommendations
 
 ### Tech Stack
-- **Frontend**: Next.js
-- **Database**: Supabase
-- **Deployment**: Vercel (follow Vercel conventions during local dev)
+- **Frontend**: Next.js 15 (App Router)
+- **Hosting**: Cloudflare Pages + Workers (OpenNext)
+- **Database**: Cloudflare D1 + Drizzle ORM
+- **Auth**: Better Auth + better-auth-cloudflare
+- **Cache**: Cloudflare KV (TMDB hot cache)
+- **Storage**: Cloudflare R2 (avatars)
+- **External API**: TMDB
 
 ---
 
@@ -87,7 +91,7 @@ bash scripts/auto-commit-turn.sh
 4. **Update architecture** document with changes
 5. **Test thoroughly** using Playwright/Chrome MCP before handoff
    - **ALWAYS use test credentials**: `dheerajsaraf1996@gmail.com` / `Abcd1234`
-6. **Supabase** Use supabase mcp server to create or perform any db migrations or set any policies or anything that is achievable using this mcp server
+6. **D1 migrations**: Use `npm run db:generate` + `npm run db:migrate:local` (or `db:migrate:remote` for production)
 7. **Commit all changes** via `scripts/auto-commit-turn.sh` before handoff (see Git Commit Protocol)
 
 ### Documentation Requirements
@@ -147,7 +151,7 @@ watch-buddy/
 2. **DRY**: Don't Repeat Yourself - reuse aggressively
 3. **Document Changes**: Keep architecture doc current
 4. **Test Before Handoff**: No untested features to user
-5. **Vercel-Ready**: Follow Vercel conventions from day one
+5. **Cloudflare-Ready**: Use `wrangler dev` / `npm run preview` for full bindings; `npm run dev` for UI-only work
 6. **Plan Then Build**: Requirements → Implementation Plan → Code
 7. **Backward Compatible**: Never break existing functionality
 8. **Commit Every Turn**: Always commit all changes at the end of every turn — no exceptions
