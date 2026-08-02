@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getContentById } from '@/lib/tmdb/cache'
+import type { RouteParams } from '@/lib/utils/route-params'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: RouteParams<{ id: string }>
 ) {
   try {
+    const { id } = await params
     const supabase = await createClient()
     const {
       data: { user },
@@ -18,7 +20,7 @@ export async function GET(
     }
 
     // Get content ID from database
-    const [tmdbIdStr, contentType] = params.id.split('-')
+    const [tmdbIdStr, contentType] = id.split('-')
     const tmdbId = parseInt(tmdbIdStr)
 
     const { data: content } = await supabase
@@ -49,9 +51,10 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: RouteParams<{ id: string }>
 ) {
   try {
+    const { id } = await params
     const supabase = await createClient()
     const {
       data: { user },
@@ -62,7 +65,11 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json()
+    const body = (await request.json()) as {
+      status?: string
+      rating?: number
+      notes?: string
+    }
     const { status, rating, notes } = body
 
     if (!status || !['to_watch', 'watching', 'watched'].includes(status)) {
@@ -70,7 +77,7 @@ export async function POST(
     }
 
     // Get content ID from database, or cache it if not exists
-    const [tmdbIdStr, contentType] = params.id.split('-')
+    const [tmdbIdStr, contentType] = id.split('-')
     const tmdbId = parseInt(tmdbIdStr)
 
     let { data: content } = await supabase
@@ -131,9 +138,10 @@ export async function POST(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: RouteParams<{ id: string }>
 ) {
   try {
+    const { id } = await params
     const supabase = await createClient()
     const {
       data: { user },
@@ -145,7 +153,7 @@ export async function DELETE(
     }
 
     // Get content ID from database
-    const [tmdbIdStr, contentType] = params.id.split('-')
+    const [tmdbIdStr, contentType] = id.split('-')
     const tmdbId = parseInt(tmdbIdStr)
 
     const { data: content } = await supabase

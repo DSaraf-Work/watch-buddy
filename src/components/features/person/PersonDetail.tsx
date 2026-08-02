@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { fetchJson } from '@/lib/utils/fetch-json'
 
 interface PersonDetailProps {
   personId: number
@@ -49,13 +50,10 @@ export function PersonDetail({ personId }: PersonDetailProps) {
   useEffect(() => {
     async function fetchPerson() {
       try {
-        const response = await fetch(`/api/person/${personId}`)
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch person details')
-        }
-
-        const data = await response.json()
+        const data = await fetchJson<{
+          person: PersonData
+          credits: { cast?: Credit[]; crew?: Credit[] }
+        }>(`/api/person/${personId}`)
         setPerson(data.person)
         setCastCredits(data.credits.cast || [])
         setCrewCredits(data.credits.crew || [])

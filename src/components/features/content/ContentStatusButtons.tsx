@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { fetchJson } from '@/lib/utils/fetch-json'
 
 interface ContentStatusButtonsProps {
   contentId: string
@@ -19,11 +20,10 @@ export function ContentStatusButtons({ contentId }: ContentStatusButtonsProps) {
 
   const fetchStatus = async () => {
     try {
-      const response = await fetch(`/api/content/${contentId}/status`)
-      if (response.ok) {
-        const data = await response.json()
-        setCurrentStatus(data.status?.status || null)
-      }
+      const data = await fetchJson<{ status?: { status: Status } | null }>(
+        `/api/content/${contentId}/status`
+      )
+      setCurrentStatus(data.status?.status || null)
     } catch (error) {
       console.error('Failed to fetch status:', error)
     }
@@ -37,7 +37,6 @@ export function ContentStatusButtons({ contentId }: ContentStatusButtonsProps) {
 
     try {
       if (status === null) {
-        // Remove status
         const response = await fetch(`/api/content/${contentId}/status`, {
           method: 'DELETE',
         })
@@ -47,21 +46,18 @@ export function ContentStatusButtons({ contentId }: ContentStatusButtonsProps) {
         setCurrentStatus(null)
         setMessage('Status removed')
       } else {
-        // Update status
-        const response = await fetch(`/api/content/${contentId}/status`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status }),
-        })
-
-        if (!response.ok) throw new Error('Failed to update status')
-
-        const data = await response.json()
+        const data = await fetchJson<{ status: { status: Status } }>(
+          `/api/content/${contentId}/status`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status }),
+          }
+        )
         setCurrentStatus(data.status.status)
         setMessage('Status updated!')
       }
 
-      // Clear message after 2 seconds
       setTimeout(() => setMessage(null), 2000)
     } catch (error) {
       console.error('Failed to update status:', error)
@@ -113,7 +109,6 @@ export function ContentStatusButtons({ contentId }: ContentStatusButtonsProps) {
         </div>
       </div>
 
-      {/* Success/Error Message */}
       {message && (
         <div
           className={`px-4 py-2 rounded-lg text-sm ${
@@ -126,7 +121,6 @@ export function ContentStatusButtons({ contentId }: ContentStatusButtonsProps) {
         </div>
       )}
 
-      {/* Current Status Display */}
       {currentStatus && (
         <div className="text-sm text-gray-600">
           Current status:{' '}
@@ -138,4 +132,3 @@ export function ContentStatusButtons({ contentId }: ContentStatusButtonsProps) {
     </div>
   )
 }
-

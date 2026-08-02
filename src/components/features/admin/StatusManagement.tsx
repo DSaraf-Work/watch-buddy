@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { fetchJson } from '@/lib/utils/fetch-json'
 
 interface StatusPreference {
   id?: string
@@ -56,19 +57,17 @@ export function StatusManagement() {
 
   const fetchPreferences = async () => {
     try {
-      const response = await fetch('/api/user/status-preferences')
-      if (response.ok) {
-        const data = await response.json()
-        if (data.preferences && data.preferences.length > 0) {
-          // Merge custom preferences with defaults
-          const merged = DEFAULT_STATUSES.map((defaultStatus) => {
-            const custom = data.preferences.find(
-              (p: StatusPreference) => p.status_key === defaultStatus.status_key
-            )
-            return custom || defaultStatus
-          })
-          setStatuses(merged)
-        }
+      const data = await fetchJson<{ preferences?: StatusPreference[] }>(
+        '/api/user/status-preferences'
+      )
+      if (data.preferences && data.preferences.length > 0) {
+        const merged = DEFAULT_STATUSES.map((defaultStatus) => {
+          const custom = data.preferences!.find(
+            (p) => p.status_key === defaultStatus.status_key
+          )
+          return custom || defaultStatus
+        })
+        setStatuses(merged)
       }
     } catch (error) {
       console.error('Failed to fetch preferences:', error)
@@ -82,15 +81,14 @@ export function StatusManagement() {
     setMessage(null)
 
     try {
-      const response = await fetch('/api/user/status-preferences', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(preference),
-      })
-
-      if (!response.ok) throw new Error('Failed to save preference')
-
-      const data = await response.json()
+      const data = await fetchJson<{ preference: StatusPreference }>(
+        '/api/user/status-preferences',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(preference),
+        }
+      )
       
       // Update local state
       setStatuses((prev) =>

@@ -7,11 +7,6 @@ const nextConfig = {
         hostname: 'image.tmdb.org',
         pathname: '/t/p/**',
       },
-      {
-        protocol: 'https',
-        hostname: '*.supabase.co',
-        pathname: '/storage/v1/object/public/**',
-      },
     ],
   },
   experimental: {
@@ -23,3 +18,5 @@ const nextConfig = {
 
 module.exports = nextConfig
 
+const { initOpenNextCloudflareForDev } = require('@opennextjs/cloudflare')
+initOpenNextCloudflareForDev()

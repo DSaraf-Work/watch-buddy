@@ -1,0 +1,6 @@
+NEXTJS_ENV=development
+BETTER_AUTH_SECRET=generate-a-random-secret-at-least-32-chars
+BETTER_AUTH_URL=http://localhost:3000
+BETTER_AUTH_TRUSTED_ORIGINS=http://localhost:3000
+TMDB_API_KEY=your-tmdb-api-key
+RESEND_API_KEY=your-resend-api-key

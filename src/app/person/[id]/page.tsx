@@ -1,21 +1,17 @@
 import { Suspense } from 'react'
 import { PersonDetail } from '@/components/features/person/PersonDetail'
+import type { RouteParams } from '@/lib/utils/route-params'
 
-interface PageProps {
-  params: {
-    id: string
-  }
-}
-
-export async function generateMetadata({ params }: PageProps) {
+export async function generateMetadata({ params }: RouteParams<{ id: string }>) {
   return {
     title: `Person Details - Watch Buddy`,
     description: `View filmography and details`,
   }
 }
 
-export default function PersonPage({ params }: PageProps) {
-  const personId = parseInt(params.id)
+export default async function PersonPage({ params }: RouteParams<{ id: string }>) {
+  const { id } = await params
+  const personId = parseInt(id)
 
   if (isNaN(personId)) {
     return <div>Invalid person ID</div>
@@ -49,4 +45,3 @@ function PersonDetailSkeleton() {
     </div>
   )
 }
-

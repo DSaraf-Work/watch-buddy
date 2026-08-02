@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { fetchJson } from '@/lib/utils/fetch-json'
 
 interface StatusPreference {
   status_key: 'to_watch' | 'watching' | 'watched'
@@ -38,17 +39,15 @@ export function useStatusPreferences() {
 
   const fetchPreferences = async () => {
     try {
-      const response = await fetch('/api/user/status-preferences')
-      if (response.ok) {
-        const data = await response.json()
-        if (data.preferences && data.preferences.length > 0) {
-          const customPrefs: Record<string, StatusPreference> = {}
-          data.preferences.forEach((pref: StatusPreference) => {
-            customPrefs[pref.status_key] = pref
-          })
-          // Merge with defaults
-          setPreferences({ ...DEFAULT_STATUSES, ...customPrefs })
-        }
+      const data = await fetchJson<{ preferences?: StatusPreference[] }>(
+        '/api/user/status-preferences'
+      )
+      if (data.preferences && data.preferences.length > 0) {
+        const customPrefs: Record<string, StatusPreference> = {}
+        data.preferences.forEach((pref) => {
+          customPrefs[pref.status_key] = pref
+        })
+        setPreferences({ ...DEFAULT_STATUSES, ...customPrefs })
       }
     } catch (error) {
       console.error('Failed to fetch status preferences:', error)
@@ -59,4 +58,3 @@ export function useStatusPreferences() {
 
   return { preferences, loading }
 }
-

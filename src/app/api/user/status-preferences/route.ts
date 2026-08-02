@@ -43,7 +43,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json()
+    const body = (await request.json()) as {
+      status_key?: string
+      custom_label?: string
+      icon?: string
+      color?: string
+    }
     const { status_key, custom_label, icon, color } = body
 
     // Validate input

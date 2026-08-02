@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import { fetchJson } from '@/lib/utils/fetch-json'
 import { useStatusPreferences } from '@/hooks/useStatusPreferences'
 
 interface ContentStatusDropdownProps {
@@ -67,11 +68,10 @@ export function ContentStatusDropdown({ contentId }: ContentStatusDropdownProps)
 
   const fetchStatus = async () => {
     try {
-      const response = await fetch(`/api/content/${contentId}/status`)
-      if (response.ok) {
-        const data = await response.json()
-        setCurrentStatus(data.status?.status || null)
-      }
+      const data = await fetchJson<{ status?: { status: Status } | null }>(
+        `/api/content/${contentId}/status`
+      )
+      setCurrentStatus(data.status?.status || null)
     } catch (error) {
       console.error('Failed to fetch status:', error)
     }
@@ -95,15 +95,14 @@ export function ContentStatusDropdown({ contentId }: ContentStatusDropdownProps)
         setCurrentStatus(null)
       } else {
         // Update status
-        const response = await fetch(`/api/content/${contentId}/status`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status }),
-        })
-
-        if (!response.ok) throw new Error('Failed to update status')
-
-        const data = await response.json()
+        const data = await fetchJson<{ status: { status: Status } }>(
+          `/api/content/${contentId}/status`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status }),
+          }
+        )
         setCurrentStatus(data.status.status)
       }
 

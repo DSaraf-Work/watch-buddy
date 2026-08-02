@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
+import { fetchJson } from '@/lib/utils/fetch-json'
 import { ContentHero } from './ContentHero'
 import { ContentInfo } from './ContentInfo'
 import { CastSection } from './CastSection'
@@ -87,13 +88,7 @@ export function ContentDetail({ contentId }: ContentDetailProps) {
   useEffect(() => {
     async function fetchContent() {
       try {
-        const response = await fetch(`/api/content/${contentId}`)
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch content')
-        }
-
-        const data = await response.json()
+        const data = await fetchJson<ContentData>(`/api/content/${contentId}`)
         setContent(data)
       } catch (err) {
         setError('Failed to load content details')

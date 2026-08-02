@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getContentById } from '@/lib/tmdb/cache'
 import { getIndiaWatchProviders } from '@/lib/tmdb/watchProviders'
+import type { RouteParams } from '@/lib/utils/route-params'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: RouteParams<{ id: string }>
 ) {
   try {
+    const { id } = await params
     // Verify authentication
     const supabase = await createClient()
     const {
@@ -21,7 +23,7 @@ export async function GET(
 
     // Parse ID and type from params
     // Format: {tmdbId}-{type} e.g., "550-movie" or "1399-series"
-    const [tmdbIdStr, contentType] = params.id.split('-')
+    const [tmdbIdStr, contentType] = id.split('-')
     const tmdbId = parseInt(tmdbIdStr)
 
     if (isNaN(tmdbId) || !contentType || !['movie', 'series'].includes(contentType)) {

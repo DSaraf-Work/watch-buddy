@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import type { RouteParams } from '@/lib/utils/route-params'
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY
 const TMDB_API_BASE_URL = 'https://api.themoviedb.org/3'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: RouteParams<{ id: string }>
 ) {
   try {
+    const { id } = await params
     const supabase = await createClient()
     const {
       data: { user },
@@ -19,7 +21,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const personId = parseInt(params.id)
+    const personId = parseInt(id)
 
     if (isNaN(personId)) {
       return NextResponse.json({ error: 'Invalid person ID' }, { status: 400 })
@@ -40,8 +42,6 @@ export async function GET(
     }
 
     const personData = await personResponse.json()
-
-    // Fetch combined credits (movies and TV shows)
     const creditsResponse = await fetch(
       `${TMDB_API_BASE_URL}/person/${personId}/combined_credits?api_key=${TMDB_API_KEY}`,
       { next: { revalidate: 86400 } }
@@ -51,7 +51,10 @@ export async function GET(
       throw new Error('Failed to fetch credits')
     }
 
-    const creditsData = await creditsResponse.json()
+    const creditsData = (await creditsResponse.json()) as {
+      cast?: Array<{ vote_count: number; popularity: number; vote_average?: number }>
+      crew?: Array<{ vote_count: number; popularity: number; vote_average?: number }>
+    }
 
     // Sort credits by popularity and vote_average
     const sortedCast = creditsData.cast
