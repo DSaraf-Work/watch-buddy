@@ -5,6 +5,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { getDb } from '@/lib/db'
 import * as schema from '@/lib/db/schema'
 import { profiles } from '@/lib/db/schema/profiles'
+import { isE2eTestMode } from '@/lib/auth/constants'
 
 async function authBuilder() {
   const db = await getDb()
@@ -23,6 +24,13 @@ async function authBuilder() {
         clientSecret: env.GOOGLE_CLIENT_SECRET,
       },
     },
+    ...(isE2eTestMode()
+      ? {
+          emailAndPassword: {
+            enabled: true,
+          },
+        }
+      : {}),
     ...withCloudflare(
       {
         autoDetectIpAddress: true,

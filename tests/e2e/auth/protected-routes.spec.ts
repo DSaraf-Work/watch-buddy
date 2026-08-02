@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test'
+import { expectNoBetterAuthSessionCookie } from '../helpers/auth'
 
 test.describe('Protected Routes', () => {
-  test('should redirect to login when accessing dashboard without auth', async ({ page }) => {
+  test('should redirect to login when accessing dashboard without auth', async ({ page, context }) => {
     await page.goto('/dashboard')
     
     // Should be redirected to login
@@ -10,6 +11,8 @@ test.describe('Protected Routes', () => {
     // Should have redirectTo parameter
     const url = new URL(page.url())
     expect(url.searchParams.get('redirectTo')).toBe('/dashboard')
+
+    await expectNoBetterAuthSessionCookie(context)
   })
 
   test('should redirect to login when accessing profile without auth', async ({ page }) => {
@@ -51,7 +54,7 @@ test.describe('Protected Routes', () => {
     // Home page should be accessible
     await page.goto('/')
     await expect(page).toHaveURL('/')
-    await expect(page.getByText('Watch-Buddy')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Watch-Buddy' })).toBeVisible()
 
     // Auth pages should be accessible
     await page.goto('/auth/login')
