@@ -109,7 +109,7 @@ jobs:
       - name: Ensure Cloudflare KV namespace exists
         run: |
           npx wrangler kv namespace create "watch-buddy-kv" 2>&1 || true
-          KV_ID=$(npx wrangler kv namespace list --json 2>/dev/null | jq -r '.[] | select(.title=="watch-buddy-kv") | .id' | head -1)
+          KV_ID=$(npx wrangler kv namespace list 2>/dev/null | jq -r '.[] | select(.title=="watch-buddy-kv") | .id' | head -1)
           if [ -z "$KV_ID" ] || [ "$KV_ID" = "null" ]; then
             echo "ERROR: Could not determine KV namespace ID for watch-buddy-kv"
             exit 1
